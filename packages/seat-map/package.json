@@ -1,0 +1,41 @@
+{
+  "name": "react-native-cinema-seat-map",
+  "version": "1.0.0",
+  "description": "High-performance, accessible, and customizable cinema seat-picker component for React Native and Expo.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "react-native",
+    "expo",
+    "seat-map",
+    "cinema",
+    "movie-tickets",
+    "seating-chart",
+    "seat-picker",
+    "booking",
+    "reservations"
+  ],
+  "author": "Lead Row Team",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-native": ">=0.70.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.79",
+    "@types/react-native": "^0.73.0",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "typescript": "^5.4.5"
+  }
+}
+

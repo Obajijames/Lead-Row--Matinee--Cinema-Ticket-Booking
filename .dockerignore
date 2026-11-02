@@ -1,0 +1,9 @@
+node_modules
+apps/mobile
+packages/seat-map
+.git
+.agents
+*.log
+.env
+.env.local
+

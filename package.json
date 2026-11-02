@@ -1,0 +1,40 @@
+{
+  "name": "lead-row",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lead Row - Cinema Ticket-Booking Mobile App & High-Concurrency Backend",
+  "scripts": {
+    "dev:server": "pnpm --filter @lead-row/server dev",
+    "dev:mobile": "pnpm --filter @lead-row/mobile start",
+    "dev:mobile:tunnel": "pnpm --filter @lead-row/mobile start:tunnel",
+    "dev:mobile:clear": "pnpm --filter @lead-row/mobile start:clear",
+    "build:server": "pnpm --filter @lead-row/server build",
+    "vercel-build": "pnpm --filter @lead-row/server prisma:generate && pnpm --filter @lead-row/server build",
+    "build:package:seat-map": "node ./node_modules/typescript/bin/tsc --project packages/seat-map/tsconfig.json",
+    "test:server": "pnpm --filter @lead-row/server test",
+    "test:concurrency": "pnpm --filter @lead-row/server test:concurrency",
+    "tokens:generate": "node convert-tokens.js --json tokens.json",
+    "prisma:generate": "pnpm --filter @lead-row/server prisma:generate",
+    "prisma:migrate": "pnpm --filter @lead-row/server prisma:migrate",
+    "lint": "echo 'Linting workspaces...'",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "msgpackr-extract",
+      "prisma"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
+

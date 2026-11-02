@@ -1,0 +1,322 @@
+// apps/server/prisma/schema.prisma
+// Lead Row Database Schema - PostgreSQL
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  OPERATOR
+}
+
+enum ShowtimeStatus {
+  SCHEDULED
+  BOOKING_OPEN
+  BOOKING_CLOSED
+  CANCELLED
+}
+
+enum SeatType {
+  STANDARD
+  VIP
+  WHEELCHAIR_ACCESSIBLE
+}
+
+enum HoldStatus {
+  ACTIVE
+  EXPIRED
+  CONVERTED
+  RELEASED
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  CANCELLED
+  REFUNDED
+}
+
+enum BookingSeatStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESSFUL
+  FAILED
+  REFUNDED
+}
+
+enum LedgerType {
+  PAYMENT_RECEIVED
+  REFUND_ISSUED
+  ADJUSTMENT
+}
+
+enum TicketStatus {
+  ISSUED
+  ADMITTED
+  VOIDED
+}
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  fullName     String        @map("full_name")
+  role         UserRole      @default(CUSTOMER)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  bookings     Booking[]
+  seatHolds    SeatHold[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+model Movie {
+  id          String     @id @default(uuid()) @db.Uuid
+  tmdbId      Int        @unique @map("tmdb_id")
+  title       String
+  overview    String     @db.Text
+  posterPath  String?    @map("poster_path")
+  backdropPath String?   @map("backdrop_path")
+  releaseDate DateTime?  @map("release_date")
+  runtime     Int?       // in minutes
+  voteAverage Float?     @map("vote_average")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  showtimes   Showtime[]
+
+  @@map("movies")
+}
+
+model Cinema {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  address     String
+  city        String
+  timezone    String        @default("Africa/Lagos")
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  auditoriums Auditorium[]
+
+  @@map("cinemas")
+}
+
+model Auditorium {
+  id            String     @id @default(uuid()) @db.Uuid
+  cinemaId      String     @map("cinema_id") @db.Uuid
+  name          String
+  layoutVersion Int        @default(1) @map("layout_version")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  cinema        Cinema     @relation(fields: [cinemaId], references: [id], onDelete: Restrict)
+  seats         Seat[]
+  showtimes     Showtime[]
+
+  @@map("auditoriums")
+}
+
+model Seat {
+  id           String       @id @default(uuid()) @db.Uuid
+  auditoriumId String       @map("auditorium_id") @db.Uuid
+  rowLabel     String       @map("row_label") @db.VarChar(10)
+  seatNumber   Int          @map("seat_number")
+  seatType     SeatType     @default(STANDARD) @map("seat_type")
+  createdAt    DateTime     @default(now()) @map("created_at")
+
+  auditorium   Auditorium   @relation(fields: [auditoriumId], references: [id], onDelete: Restrict)
+  bookingSeats BookingSeat[]
+  seatHolds    SeatHold[]
+
+  @@unique([auditoriumId, rowLabel, seatNumber], name: "uq_auditorium_seat")
+  @@map("seats")
+}
+
+model Showtime {
+  id             String         @id @default(uuid()) @db.Uuid
+  movieId        String         @map("movie_id") @db.Uuid
+  auditoriumId   String         @map("auditorium_id") @db.Uuid
+  startTime      DateTime       @map("start_time")
+  endTime        DateTime       @map("end_time")
+  basePriceKobo  Int            @map("base_price_kobo") // NGN kobo minor units
+  currency       String         @default("NGN") @db.VarChar(3)
+  status         ShowtimeStatus @default(BOOKING_OPEN)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  movie          Movie          @relation(fields: [movieId], references: [id], onDelete: Restrict)
+  auditorium     Auditorium     @relation(fields: [auditoriumId], references: [id], onDelete: Restrict)
+  bookings       Booking[]
+  bookingSeats   BookingSeat[]
+  seatHolds      SeatHold[]
+
+  @@index([movieId, startTime])
+  @@index([auditoriumId, startTime])
+  @@map("showtimes")
+}
+
+model SeatHold {
+  id         String     @id @default(uuid()) @db.Uuid
+  holdToken  String     @map("hold_token")
+  userId     String     @map("user_id") @db.Uuid
+  showtimeId String     @map("showtime_id") @db.Uuid
+  seatId     String     @map("seat_id") @db.Uuid
+  expiresAt  DateTime   @map("expires_at")
+  status     HoldStatus @default(ACTIVE)
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Restrict)
+  showtime   Showtime   @relation(fields: [showtimeId], references: [id], onDelete: Restrict)
+  seat       Seat       @relation(fields: [seatId], references: [id], onDelete: Restrict)
+
+  @@index([holdToken])
+  @@index([showtimeId, expiresAt])
+  @@map("seat_holds")
+}
+
+model Booking {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  showtimeId     String        @map("showtime_id") @db.Uuid
+  idempotencyKey String        @unique @map("idempotency_key")
+  subtotalKobo   Int           @map("subtotal_kobo")
+  serviceFeeKobo Int           @map("service_fee_kobo")
+  totalAmountKobo Int          @map("total_amount_kobo")
+  currency       String        @default("NGN") @db.VarChar(3)
+  status         BookingStatus @default(PENDING_PAYMENT)
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  user           User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  showtime       Showtime      @relation(fields: [showtimeId], references: [id], onDelete: Restrict)
+  bookingSeats   BookingSeat[]
+  payments       Payment[]
+  ledgerEntries  LedgerEntry[]
+  ticket         Ticket?
+
+  @@index([userId, status])
+  @@map("bookings")
+}
+
+model BookingSeat {
+  id         String            @id @default(uuid()) @db.Uuid
+  bookingId  String            @map("booking_id") @db.Uuid
+  showtimeId String            @map("showtime_id") @db.Uuid
+  seatId     String            @map("seat_id") @db.Uuid
+  status     BookingSeatStatus @default(CONFIRMED)
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  booking    Booking           @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  showtime   Showtime          @relation(fields: [showtimeId], references: [id], onDelete: Restrict)
+  seat       Seat              @relation(fields: [seatId], references: [id], onDelete: Restrict)
+
+  // Handled via raw SQL partial unique index:
+  // CREATE UNIQUE INDEX uq_active_seat_allocation ON booking_seats (showtime_id, seat_id) WHERE status = 'CONFIRMED';
+  @@index([showtimeId, seatId])
+  @@map("booking_seats")
+}
+
+model Payment {
+  id                 String        @id @default(uuid()) @db.Uuid
+  bookingId          String        @map("booking_id") @db.Uuid
+  provider           String        @default("flutterwave")
+  providerRef        String        @unique @map("provider_ref")
+  expectedAmountKobo Int           @map("expected_amount_kobo")
+  verifiedAmountKobo Int?          @map("verified_amount_kobo")
+  currency           String        @default("NGN") @db.VarChar(3)
+  status             PaymentStatus @default(PENDING)
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  booking            Booking       @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@map("payments")
+}
+
+model WebhookEvent {
+  id              String   @id @default(uuid()) @db.Uuid
+  provider        String   @default("flutterwave")
+  providerEventId String   @map("provider_event_id")
+  payloadHash     String   @map("payload_hash")
+  isProcessed     Boolean  @default(false) @map("is_processed")
+  processedAt     DateTime? @map("processed_at")
+  errorMessage    String?  @map("error_message")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@unique([provider, providerEventId], name: "uq_provider_event")
+  @@map("webhook_events")
+}
+
+model LedgerEntry {
+  id              String     @id @default(uuid()) @db.Uuid
+  bookingId       String?    @map("booking_id") @db.Uuid
+  entryType       LedgerType @map("entry_type")
+  amountKobo      Int        @map("amount_kobo")
+  currency        String     @default("NGN") @db.VarChar(3)
+  sourceType      String     @map("source_type") // e.g. "FLUTTERWAVE_CHARGE", "FLUTTERWAVE_REFUND"
+  sourceReference String     @map("source_reference") // e.g. transactionId
+  notes           String?
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  booking         Booking?   @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@unique([sourceType, sourceReference], name: "uq_ledger_source")
+  @@map("ledger_entries")
+}
+
+model Ticket {
+  id         String       @id @default(uuid()) @db.Uuid
+  bookingId  String       @unique @map("booking_id") @db.Uuid
+  publicToken String      @unique @map("public_token") // Cryptographic random token
+  qrPayload  String       @map("qr_payload")
+  status     TicketStatus @default(ISSUED)
+  issuedAt   DateTime     @default(now()) @map("issued_at")
+
+  booking    Booking      @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@map("tickets")
+}
+
+model QueueAdmission {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  showtimeId String   @map("showtime_id") @db.Uuid
+  token      String   @unique
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([userId, showtimeId, expiresAt])
+  @@map("queue_admissions")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String
+  targetType String  @map("target_type")
+  targetId  String?  @map("target_id")
+  requestId String?  @map("request_id")
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([requestId])
+  @@map("audit_logs")
+}
+

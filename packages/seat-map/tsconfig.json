@@ -1,0 +1,21 @@
+{
+  "extends": "../../apps/mobile/tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "noEmit": false,
+    "baseUrl": ".",
+    "typeRoots": [
+      "../../apps/mobile/node_modules/@types",
+      "../../node_modules/@types"
+    ],
+    "paths": {
+      "react": ["../../apps/mobile/node_modules/@types/react"],
+      "react-native": ["../../apps/mobile/node_modules/react-native"]
+    }
+  },
+  "include": ["src/**/*"]
+}

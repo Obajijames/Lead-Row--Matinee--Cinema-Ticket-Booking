@@ -1,0 +1,10 @@
+{
+  "name": "@lead-row/load-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "k6 concurrency and load test suites for Lead Row",
+  "scripts": {
+    "test:competing-holds": "k6 run competing-holds.js"
+  }
+}
+
