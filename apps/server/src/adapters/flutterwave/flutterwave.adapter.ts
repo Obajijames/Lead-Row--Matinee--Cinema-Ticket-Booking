@@ -198,6 +198,83 @@ export class FlutterwaveAdapter {
   }
 
   /**
+   * Server-to-server transaction verification by transaction reference (txRef).
+   */
+  static async verifyByTxRef(txRef: string): Promise<FlutterwaveVerificationResult> {
+    const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
+
+    if (!secretKey || secretKey.includes('your_secret_key')) {
+      logger.warn('FLUTTERWAVE_SECRET_KEY is placeholder. Using mock verification for txRef.', { txRef });
+      return {
+        status: 'successful',
+        amountInKobo: 500000,
+        currency: 'NGN',
+        txRef,
+        customerEmail: 'customer@leadrow.test',
+      };
+    }
+
+    const endpoint = `${this.baseUrl}/transactions/verify_by_reference?tx_ref=${encodeURIComponent(txRef)}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        return {
+          status: 'pending',
+          amountInKobo: 0,
+          currency: 'NGN',
+          txRef,
+        };
+      }
+
+      const body: any = await response.json();
+      if (body.status === 'success' && body.data) {
+        const data = body.data;
+        const amountInKobo = Math.round(Number(data.amount) * 100);
+        return {
+          status: data.status === 'successful' ? 'successful' : data.status === 'pending' ? 'pending' : 'failed',
+          amountInKobo,
+          currency: data.currency || 'NGN',
+          txRef: data.tx_ref,
+          flwRef: data.flw_ref,
+          customerEmail: data.customer?.email,
+          customerName: data.customer?.name,
+        };
+      }
+
+      return {
+        status: 'pending',
+        amountInKobo: 0,
+        currency: 'NGN',
+        txRef,
+      };
+    } catch (err: any) {
+      logger.error('Failed to communicate with Flutterwave verify_by_reference endpoint', {
+        error: err.message,
+        txRef,
+      });
+      return {
+        status: 'pending',
+        amountInKobo: 0,
+        currency: 'NGN',
+        txRef,
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  /**
    * Issues a refund for a transaction in Flutterwave test/production mode.
    * Converts minor units (kobo) to Naira for the Flutterwave API.
    */

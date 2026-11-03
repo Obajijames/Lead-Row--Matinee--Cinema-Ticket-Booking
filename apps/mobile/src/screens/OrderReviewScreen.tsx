@@ -44,6 +44,7 @@ interface CheckoutResult {
 export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
   const { holdToken, showtimeId } = route.params;
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [checkoutData, setCheckoutData] = useState<CheckoutResult | null>(null);
 
   // Customer contact state
@@ -74,20 +75,52 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
     return isValid;
   };
 
-  const openPaymentGateway = async (url: string) => {
+  const checkAndNavigateToTicket = async (bookingId: string) => {
+    setIsVerifying(true);
+    try {
+      // 1. Trigger server verification with Flutterwave
+      const verif = await apiRequest<{ confirmed: boolean; bookingId: string }>(
+        `/v1/bookings/${bookingId}/verify-payment`,
+        { method: 'POST' }
+      );
+
+      if (verif.confirmed) {
+        try {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {}
+        navigation.replace('Ticket', { ticketToken: bookingId });
+        return;
+      }
+
+      // 2. Poll up to 4 attempts if webhook or gateway takes a few seconds
+      for (let i = 0; i < 4; i++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        const booking = await apiRequest<{ status: string; id: string }>(`/v1/bookings/${bookingId}`);
+        if (booking.status === 'CONFIRMED') {
+          try {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch {}
+          navigation.replace('Ticket', { ticketToken: bookingId });
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Payment verification poll warning:', e);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const openPaymentGateway = async (url: string, bookingId: string) => {
     const useInApp = await getInAppBrowserPreference();
     if (useInApp) {
       try {
-        await WebBrowser.openBrowserAsync(url, {
-          toolbarColor: '#0B0B10',
-          controlsColor: '#d7960a',
-          secondaryToolbarColor: '#1C1C26',
-          showTitle: true,
-          enableBarCollapsing: true,
-          showInRecents: false,
-        });
+        await WebBrowser.openAuthSessionAsync(url, 'leadrow://');
+        // When auth session closes or redirects
+        await checkAndNavigateToTicket(bookingId);
       } catch {
         Linking.openURL(url).catch(() => {});
+        await checkAndNavigateToTicket(bookingId);
       }
     } else {
       Linking.openURL(url).catch(() => {});
@@ -123,27 +156,8 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
       } catch {}
 
       if (res.paymentUrl) {
-        // Automatically launch Flutterwave hosted checkout (In-App Browser by default)
-        await openPaymentGateway(res.paymentUrl);
-
-        Alert.alert(
-          'Flutterwave Checkout Opened',
-          `Order #${res.bookingId.slice(0, 8)} initialized for ₦${(
-            res.totalAmountKobo / 100
-          ).toLocaleString()}.\n\nFlutterwave test payment page was opened for ${customerName.trim()} (${customerEmail.trim()}).\n\nOnce completed, tap "View Ticket" to access your admission QR code.`,
-          [
-            {
-              text: 'Re-open Checkout',
-              onPress: () => {
-                if (res.paymentUrl) openPaymentGateway(res.paymentUrl);
-              },
-            },
-            {
-              text: 'View Ticket',
-              onPress: () => navigation.navigate('Ticket', { ticketToken: res.bookingId }),
-            },
-          ]
-        );
+        // Automatically launch Flutterwave hosted checkout
+        await openPaymentGateway(res.paymentUrl, res.bookingId);
       } else {
         Alert.alert(
           'Booking Order Created',
@@ -258,15 +272,16 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
           {checkoutData?.paymentUrl ? (
             <View style={{ gap: 12 }}>
               <Button
-                label="Re-open Flutterwave Checkout"
-                onPress={() => openPaymentGateway(checkoutData.paymentUrl!)}
+                label={isVerifying ? 'Verifying Confirmation...' : 'View Confirmed Ticket'}
+                isLoading={isVerifying}
+                onPress={() => checkAndNavigateToTicket(checkoutData.bookingId)}
                 variant="primary"
                 size="lg"
                 style={styles.payBtn}
               />
               <Button
-                label="View Ticket Status"
-                onPress={() => navigation.navigate('Ticket', { ticketToken: checkoutData.bookingId })}
+                label="Re-open Flutterwave Checkout"
+                onPress={() => openPaymentGateway(checkoutData.paymentUrl!, checkoutData.bookingId)}
                 variant="outline"
                 size="lg"
                 style={styles.payBtn}
@@ -274,8 +289,8 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
             </View>
           ) : (
             <Button
-              label={isProcessing ? 'Processing Checkout...' : 'Proceed to Payment'}
-              isLoading={isProcessing}
+              label={isProcessing ? 'Processing Checkout...' : isVerifying ? 'Verifying Payment...' : 'Proceed to Payment'}
+              isLoading={isProcessing || isVerifying}
               onPress={handleCheckout}
               variant="primary"
               size="lg"

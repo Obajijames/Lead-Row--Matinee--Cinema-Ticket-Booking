@@ -169,6 +169,8 @@ export class BookingService {
     });
 
     // Initialize hosted payment with Flutterwave
+    const baseUrl = process.env.API_BASE_URL || 'https://lead-row-cinema-ticket-booking-api.vercel.app';
+    const redirectUrl = `${baseUrl}/v1/bookings/payment-callback`;
     let paymentUrl = `https://checkout.flutterwave.com/v3/hosted/pay/${providerRef}`;
     try {
       const flwResult = await FlutterwaveAdapter.initializePayment({
@@ -177,6 +179,7 @@ export class BookingService {
         currency: showtime.currency,
         customerEmail: customerEmail || 'customer@leadrow.com',
         customerName: customerName || 'Lead Row Customer',
+        redirectUrl,
       });
       paymentUrl = flwResult.paymentUrl;
     } catch (err: any) {
@@ -438,6 +441,79 @@ export class BookingService {
       bookingId: result.booking.id,
       status: result.booking.status,
       ticket: result.ticket,
+    };
+  }
+
+  /**
+   * Verifies payment with Flutterwave and confirms the booking immediately.
+   * Can be invoked by the client returning from hosted checkout or the callback redirect.
+   */
+  static async verifyAndConfirmPayment(bookingId: string, transactionId?: string | number, requestId?: string) {
+    const booking = await writeClient.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        payments: true,
+        bookingSeats: { include: { seat: true } },
+        showtime: { include: { movie: true, auditorium: { include: { cinema: true } } } },
+        ticket: true,
+      },
+    });
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (booking.status === BookingStatus.CONFIRMED && booking.ticket) {
+      return {
+        confirmed: true,
+        bookingId: booking.id,
+        status: booking.status,
+        ticket: booking.ticket,
+      };
+    }
+
+    const payment = booking.payments[0];
+    if (!payment) {
+      throw new Error('No payment record associated with this booking');
+    }
+
+    // Check upstream Flutterwave verification
+    let verifResult;
+    if (transactionId) {
+      verifResult = await FlutterwaveAdapter.verifyTransaction(transactionId);
+    } else {
+      verifResult = await FlutterwaveAdapter.verifyByTxRef(payment.providerRef);
+    }
+
+    if (verifResult.status !== 'successful') {
+      logger.info('Payment verification status is not yet successful', {
+        bookingId,
+        status: verifResult.status,
+        requestId,
+      });
+      return {
+        confirmed: false,
+        bookingId: booking.id,
+        status: booking.status,
+        paymentStatus: verifResult.status,
+      };
+    }
+
+    // Call idempotent confirmation
+    const confirmResult = await this.confirmPaidBooking({
+      transactionId: transactionId || verifResult.flwRef || payment.providerRef,
+      txRef: payment.providerRef,
+      amountKobo: verifResult.amountInKobo || payment.expectedAmountKobo,
+      currency: verifResult.currency || payment.currency,
+      providerEventId: String(transactionId || payment.providerRef),
+      requestId,
+    });
+
+    return {
+      confirmed: true,
+      bookingId: confirmResult.bookingId,
+      status: confirmResult.status,
+      ticket: confirmResult.ticket,
     };
   }
 
