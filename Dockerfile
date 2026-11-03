@@ -1,7 +1,8 @@
 # Dockerfile for Lead Row Express Backend
 # Multi-stage build for pnpm monorepo deployment
 
-FROM node:20-alpine AS base
+FROM node:20-slim AS base
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -24,9 +25,10 @@ RUN npx prisma generate
 RUN pnpm build
 
 # Stage 3: Minimal production runner
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Copy node modules and built assets
 COPY --from=dependencies /app/node_modules ./node_modules
@@ -39,5 +41,4 @@ COPY pnpm-workspace.yaml package.json ./
 WORKDIR /app/apps/server
 
 EXPOSE 4000
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
-
+CMD ["node", "dist/index.js"]
