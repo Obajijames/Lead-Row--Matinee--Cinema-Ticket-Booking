@@ -6,14 +6,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal, radiusVal } from '../tokens';
 import { useTheme } from '../theme/ThemeContext';
+import { useInAppBrowserPreference } from '../utils/browserPreference';
 import {
   Text,
   Card,
@@ -24,6 +27,14 @@ import {
 export const ProfileScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { themeMode, setThemeMode, isDark, colors } = useTheme();
+  const { isInAppBrowser, togglePreference } = useInAppBrowserPreference();
+
+  const handleToggleBrowser = async (value: boolean) => {
+    try {
+      Haptics.selectionAsync();
+    } catch {}
+    await togglePreference(value);
+  };
 
   const menuItems: Array<{
     icon: keyof typeof Ionicons.glyphMap;
@@ -210,6 +221,39 @@ export const ProfileScreen: React.FC = () => {
           </View>
         </Card>
 
+        {/* Checkout Browser Experience Preference */}
+        <Text variant="title-small" colorRoleName="on-surface-variant" style={styles.sectionHeader}>
+          Checkout Experience
+        </Text>
+
+        <Card style={styles.themeCard}>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Ionicons name="browsers-outline" size={18} color={colors.primary} />
+                <Text variant="body-medium" colorRoleName="on-surface" style={{ fontWeight: '700' }}>
+                  In-App Browser
+                </Text>
+              </View>
+              <Text variant="body-small" colorRoleName="on-surface-variant" style={{ marginTop: 4 }}>
+                {isInAppBrowser
+                  ? 'Complete Flutterwave payment inside the app without switching to external Chrome / Safari.'
+                  : 'Open Flutterwave payment links in your phone’s default external browser.'}
+              </Text>
+            </View>
+
+            <Switch
+              value={isInAppBrowser}
+              onValueChange={handleToggleBrowser}
+              trackColor={{ false: colors.outlineVariant, true: colors.primary }}
+              thumbColor={isInAppBrowser ? '#FFFFFF' : '#8E8E93'}
+              accessibilityRole="switch"
+              accessibilityLabel="In-App Browser Toggle"
+              accessibilityState={{ checked: isInAppBrowser }}
+            />
+          </View>
+        </Card>
+
         {/* Menu Items List */}
         <Text variant="title-small" colorRoleName="on-surface-variant" style={styles.sectionHeader}>
           Account & Preferences
@@ -313,6 +357,11 @@ const styles = StyleSheet.create({
   themeCard: {
     padding: spacingVal('md', 16),
     marginBottom: spacingVal('xl', 24),
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   themeSelector: {
     flexDirection: 'row',

@@ -15,6 +15,8 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal } from '../tokens';
+import * as WebBrowser from 'expo-web-browser';
+import { getInAppBrowserPreference } from '../utils/browserPreference';
 import {
   Text,
   ScreenHeader,
@@ -72,6 +74,26 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
     return isValid;
   };
 
+  const openPaymentGateway = async (url: string) => {
+    const useInApp = await getInAppBrowserPreference();
+    if (useInApp) {
+      try {
+        await WebBrowser.openBrowserAsync(url, {
+          toolbarColor: '#0B0B10',
+          controlsColor: '#d7960a',
+          secondaryToolbarColor: '#1C1C26',
+          showTitle: true,
+          enableBarCollapsing: true,
+          showInRecents: false,
+        });
+      } catch {
+        Linking.openURL(url).catch(() => {});
+      }
+    } else {
+      Linking.openURL(url).catch(() => {});
+    }
+  };
+
   const handleCheckout = async () => {
     if (!validateInputs()) {
       try {
@@ -101,19 +123,19 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
       } catch {}
 
       if (res.paymentUrl) {
-        // Automatically launch Flutterwave hosted checkout in the device browser
-        Linking.openURL(res.paymentUrl).catch(() => {});
+        // Automatically launch Flutterwave hosted checkout (In-App Browser by default)
+        await openPaymentGateway(res.paymentUrl);
 
         Alert.alert(
           'Flutterwave Checkout Opened',
           `Order #${res.bookingId.slice(0, 8)} initialized for ₦${(
             res.totalAmountKobo / 100
-          ).toLocaleString()}.\n\nFlutterwave test payment page has been opened in your browser for ${customerName.trim()} (${customerEmail.trim()}).\n\nComplete payment there, then return to view your ticket.`,
+          ).toLocaleString()}.\n\nFlutterwave test payment page was opened for ${customerName.trim()} (${customerEmail.trim()}).\n\nOnce completed, tap "View Ticket" to access your admission QR code.`,
           [
             {
               text: 'Re-open Checkout',
               onPress: () => {
-                if (res.paymentUrl) Linking.openURL(res.paymentUrl);
+                if (res.paymentUrl) openPaymentGateway(res.paymentUrl);
               },
             },
             {
@@ -237,7 +259,7 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
             <View style={{ gap: 12 }}>
               <Button
                 label="Re-open Flutterwave Checkout"
-                onPress={() => Linking.openURL(checkoutData.paymentUrl!)}
+                onPress={() => openPaymentGateway(checkoutData.paymentUrl!)}
                 variant="primary"
                 size="lg"
                 style={styles.payBtn}
