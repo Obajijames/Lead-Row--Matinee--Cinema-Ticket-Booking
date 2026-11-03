@@ -12,7 +12,7 @@ COPY apps/server/package.json ./apps/server/
 COPY apps/mobile/package.json ./apps/mobile/
 COPY packages/seat-map/package.json ./packages/seat-map/
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Stage 2: Generate Prisma Client & Compile TypeScript
 FROM dependencies AS builder

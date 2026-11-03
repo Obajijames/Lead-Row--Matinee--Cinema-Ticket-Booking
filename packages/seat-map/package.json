@@ -24,7 +24,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc",
-    "prepare": "npm run build"
+    "prepack": "npm run build"
   },
   "peerDependencies": {
     "react": ">=18.0.0",
