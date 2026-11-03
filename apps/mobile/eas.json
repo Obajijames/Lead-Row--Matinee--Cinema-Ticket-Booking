@@ -6,12 +6,18 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://lead-row-cinema-ticket-booking-api.vercel.app"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "preview": {
       "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://lead-row-cinema-ticket-booking-api.vercel.app"
+      },
       "android": {
         "buildType": "apk"
       }

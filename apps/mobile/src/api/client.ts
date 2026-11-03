@@ -3,8 +3,8 @@ import { Platform, NativeModules } from 'react-native';
 
 declare const process: any;
 
-// Fallback to developer machine's current local Wi-Fi IP address
-const DEFAULT_HOST_IP = '10.150.119.53';
+// Production live Vercel REST API as the authoritative fallback
+const DEFAULT_API_URL = 'https://lead-row-cinema-ticket-booking-api.vercel.app';
 
 export function getApiBaseUrl(): string {
   // 1. Explicitly configured via EXPO_PUBLIC_API_URL
@@ -12,29 +12,8 @@ export function getApiBaseUrl(): string {
     return process.env.EXPO_PUBLIC_API_URL;
   }
 
-  // 2. Development dynamic host detection from Metro bundle URL
-  if (__DEV__) {
-    const scriptURL = NativeModules.SourceCode?.scriptURL;
-    if (scriptURL) {
-      // Matches http://192.168.x.x:8081 or exp://192.168.x.x:8081
-      const match = scriptURL.match(/^(?:https?|exps?):\/\/([^/:]+)/);
-      if (match && match[1]) {
-        const host = match[1];
-        // If not a tunnel/cloud URL, use the detected LAN host
-        if (!host.includes('ngrok') && !host.includes('expo') && host !== 'localhost' && host !== '127.0.0.1') {
-          return `http://${host}:4000`;
-        }
-      }
-    }
-
-    if (Platform.OS === 'android') {
-      // If running on an emulator without scriptURL
-      return `http://${DEFAULT_HOST_IP}:4000`;
-    }
-  }
-
-  // 3. Physical phone on LAN or fallback
-  return `http://${DEFAULT_HOST_IP}:4000`;
+  // 2. Fallback to production cloud API
+  return DEFAULT_API_URL;
 }
 
 export const API_BASE_URL = getApiBaseUrl();
