@@ -30,15 +30,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Copy node modules and built assets
-COPY --from=dependencies /app/node_modules ./node_modules
-COPY --from=dependencies /app/apps/server/node_modules ./apps/server/node_modules
+# Copy node modules and built assets directly from builder (which contains the generated .prisma/client)
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/apps/server/node_modules ./apps/server/node_modules
 COPY --from=builder /app/apps/server/dist ./apps/server/dist
 COPY --from=builder /app/apps/server/prisma ./apps/server/prisma
 COPY --from=builder /app/apps/server/package.json ./apps/server/package.json
 COPY pnpm-workspace.yaml package.json ./
 
 WORKDIR /app/apps/server
+RUN npx prisma generate
 
 EXPOSE 4000
 CMD ["node", "dist/index.js"]
