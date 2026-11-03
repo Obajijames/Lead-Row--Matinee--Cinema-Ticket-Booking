@@ -264,19 +264,6 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
             />
           </View>
 
-          {/* Payment Provider Notice */}
-          <Card style={styles.paymentCard}>
-            <Text variant="title-small" colorRoleName="on-surface" style={styles.paymentTitle}>
-              Payment Method
-            </Text>
-            <Text variant="body-medium" colorRoleName="on-surface-variant">
-              Flutterwave Hosted Checkout (Test Mode)
-            </Text>
-            <Text variant="body-small" colorRoleName="outline" style={{ marginTop: 4 }}>
-              Card, Bank Transfer, and USSD supported.
-            </Text>
-          </Card>
-
           {checkoutData?.paymentUrl ? (
             <View style={{ gap: 12 }}>
               <Button
@@ -342,14 +329,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   summaryContainer: {
-    marginBottom: spacingVal('md', 16),
-  },
-  paymentCard: {
     marginBottom: spacingVal('xl', 24),
-  },
-  paymentTitle: {
-    fontWeight: '700',
-    marginBottom: spacingVal('xxs', 4),
   },
   payBtn: {
     width: '100%',
