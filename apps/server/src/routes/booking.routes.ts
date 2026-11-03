@@ -56,7 +56,8 @@ router.get('/payment-callback', async (req: Request, res: Response) => {
     }
 
     const bookingId = payment.bookingId;
-    const deepLink = `leadrow://ticket/${bookingId}?ticketToken=${bookingId}&bookingId=${bookingId}`;
+    const customSchemeLink = `leadrow://ticket/${bookingId}?ticketToken=${bookingId}&bookingId=${bookingId}`;
+    const intentLink = `intent://ticket/${bookingId}?ticketToken=${bookingId}&bookingId=${bookingId}#Intent;scheme=leadrow;package=com.leadrow.app;end`;
 
     return res.send(`
       <!DOCTYPE html>
@@ -69,9 +70,12 @@ router.get('/payment-callback', async (req: Request, res: Response) => {
           .container { max-width: 420px; margin: 40px auto; background: #14141E; border: 1px solid #2D2D3B; border-radius: 16px; padding: 32px 24px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
           .badge { display: inline-block; width: 64px; height: 64px; line-height: 64px; border-radius: 32px; background: ${isConfirmed ? 'rgba(75,181,67,0.15)' : 'rgba(215,150,10,0.15)'}; color: ${isConfirmed ? '#4BB543' : '#d7960a'}; font-size: 32px; margin-bottom: 20px; }
           h1 { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
-          p { font-size: 14px; color: #A0A0B0; line-height: 1.5; margin-bottom: 24px; }
-          .btn { display: block; background: #d7960a; color: #0B0B10; font-weight: 800; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-size: 15px; margin-bottom: 12px; }
-          .btn-sub { display: block; color: #d7960a; font-size: 13px; text-decoration: underline; margin-top: 16px; }
+          p { font-size: 14px; color: #A0A0B0; line-height: 1.5; margin-bottom: 20px; }
+          .btn { display: block; background: #d7960a; color: #0B0B10; font-weight: 800; text-decoration: none; padding: 14px 20px; border-radius: 12px; font-size: 15px; margin-bottom: 12px; cursor: pointer; }
+          .btn-sub { display: block; color: #d7960a; font-size: 13px; text-decoration: underline; margin-top: 14px; cursor: pointer; }
+          .note-card { background: rgba(215,150,10,0.08); border: 1px dashed rgba(215,150,10,0.4); border-radius: 12px; padding: 14px 16px; margin-top: 24px; text-align: left; }
+          .note-title { color: #d7960a; font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+          .note-text { color: #CCCCCC; font-size: 12px; line-height: 1.5; margin: 0; }
         </style>
       </head>
       <body>
@@ -79,13 +83,25 @@ router.get('/payment-callback', async (req: Request, res: Response) => {
           <div class="badge">${isConfirmed ? '✓' : '⏱'}</div>
           <h1>${isConfirmed ? 'Payment Confirmed!' : 'Payment Received'}</h1>
           <p>${isConfirmed ? 'Your cinema seats are confirmed and your digital admission ticket with QR code has been issued.' : 'We are verifying your transaction. You can now return to the Lead Row app.'}</p>
-          <a href="${deepLink}" class="btn">View Admission Ticket</a>
-          <a href="${deepLink}" class="btn-sub">Return to Lead Row App</a>
+          <a href="${intentLink}" onclick="openLeadRow(event)" class="btn">View Admission Ticket</a>
+          <a href="${customSchemeLink}" onclick="openLeadRow(event)" class="btn-sub">Return to Lead Row App</a>
+
+          <div class="note-card">
+            <div class="note-title">💡 In-App Browser / Expo Go Notice</div>
+            <p class="note-text">
+              Your payment is verified and seats are booked! If tapping does not switch apps automatically, simply tap the <strong>✕ (Close)</strong> button at the top-left of this browser to return directly to Lead Row and see your confirmed ticket.
+            </p>
+          </div>
         </div>
         <script>
-          setTimeout(function() {
-            window.location.href = "${deepLink}";
-          }, 1200);
+          function openLeadRow(e) {
+            try {
+              window.location.href = "${intentLink}";
+              setTimeout(function() {
+                window.location.href = "${customSchemeLink}";
+              }, 400);
+            } catch (err) {}
+          }
         </script>
       </body>
       </html>
