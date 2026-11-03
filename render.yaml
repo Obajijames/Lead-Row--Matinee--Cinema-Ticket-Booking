@@ -1,0 +1,30 @@
+# render.yaml - Infrastructure as Code Blueprint for Render.com
+# Reference: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: lead-row-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon # or frankfurt
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: TMDB_API_KEY
+        sync: false
+      - key: TMDB_READ_ACCESS_TOKEN
+        sync: false
+      - key: FLUTTERWAVE_SECRET_KEY
+        sync: false
+      - key: FLUTTERWAVE_WEBHOOK_HASH
+        sync: false
+
