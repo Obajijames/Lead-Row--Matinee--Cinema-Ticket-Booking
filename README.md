@@ -71,20 +71,23 @@ Lead Row is architected for deployment across scalable serverless or containeriz
 
 ```mermaid
 graph LR
-    User["Android Mobile App"] -->|HTTPS| Render["Render Containerized API (lead-row-api.onrender.com)"]
-    Render -->|Atomic SET NX EX| Redis[("Managed Redis Cluster (Redis Cloud)")]
-    Render -->|Transactions & Queries| Postgres[("Managed PostgreSQL (Neon Serverless)")]
-    Render -->|Serverless Webhook Handler| FLW["Flutterwave"]
+    User["Android Mobile App"] -->|HTTPS| Vercel["Vercel Serverless API (lead-row-cinema-ticket-booking-api.vercel.app)"]
+    Vercel -->|Atomic SET NX EX| Redis[("Managed Redis Cluster (Redis Cloud)")]
+    Vercel -->|Transactions & Queries| Postgres[("Managed PostgreSQL (Neon Serverless)")]
+    Vercel -->|Serverless Webhook Handler| FLW["Flutterwave"]
     Redis -->|Hold Sweeps & Queues| Workers["BullMQ Worker Services"]
     Workers -->|Confirmations & Refunds| Postgres
 ```
 
 ### Core Infrastructure Components
-* **REST API Layer (Live on Render)**:
+* **Primary REST API Layer (Live on Vercel)**:
+  - **Live URL**: [`https://lead-row-cinema-ticket-booking-api.vercel.app`](https://lead-row-cinema-ticket-booking-api.vercel.app)
+  - **Health Endpoint**: `GET https://lead-row-cinema-ticket-booking-api.vercel.app/health` (HTTP 200 OK)
+  - **Serverless Edge Engine**: Deployed via [`api/index.ts`](./api/index.ts) and [`vercel.json`](./vercel.json) with optimized connection pooling.
+* **Secondary / Containerized API Deployment (Render)**:
   - **Live URL**: [`https://lead-row-api.onrender.com`](https://lead-row-api.onrender.com)
   - **Health Endpoint**: `GET https://lead-row-api.onrender.com/health` (HTTP 200 OK)
-  - **Docker Containerization** via multi-stage [`Dockerfile`](./Dockerfile) deployed on Render.
-  - Optional serverless entrypoint via [`api/index.ts`](./api/index.ts) and [`vercel.json`](./vercel.json).
+  - **Docker Containerization**: Multi-stage Linux [`Dockerfile`](./Dockerfile) for continuous deployment on Render, Railway, or Fly.io.
 * **Relational Database (PostgreSQL)**:
   - Hosted on **Neon Serverless PostgreSQL** / Supabase.
   - Sized connection pool (`connection_limit=20`, `pool_timeout=10s`) preventing process thrashing.
