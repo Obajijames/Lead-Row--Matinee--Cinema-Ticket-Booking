@@ -56,7 +56,7 @@ router.get('/payment-callback', async (req: Request, res: Response) => {
     }
 
     const bookingId = payment.bookingId;
-    const deepLink = `leadrow://ticket?bookingId=${bookingId}`;
+    const deepLink = `leadrow://ticket/${bookingId}?ticketToken=${bookingId}&bookingId=${bookingId}`;
 
     return res.send(`
       <!DOCTYPE html>

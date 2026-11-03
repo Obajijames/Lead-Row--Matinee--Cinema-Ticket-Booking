@@ -21,13 +21,28 @@ import { TicketScreen } from './src/screens/TicketScreen';
 import { WaitingRoomScreen } from './src/screens/WaitingRoomScreen';
 import { ComponentGalleryScreen } from './src/screens/dev/ComponentGalleryScreen';
 
+const linking = {
+  prefixes: ['leadrow://', 'https://lead-row-cinema-ticket-booking-api.vercel.app'],
+  config: {
+    screens: {
+      MainTabs: '',
+      Home: 'home',
+      MovieDetails: 'movie/:movieId',
+      SeatMap: 'seats/:showtimeId',
+      OrderReview: 'checkout',
+      Ticket: 'ticket/:ticketToken',
+      DevComponentGallery: 'dev',
+    },
+  },
+};
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppContent() {
   const { isDark, colors } = useTheme();
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Stack.Navigator
         initialRouteName="MainTabs"

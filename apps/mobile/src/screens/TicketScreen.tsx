@@ -46,7 +46,8 @@ interface TicketDetails {
 }
 
 export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
-  const { ticketToken } = route.params;
+  const params = (route.params as any) || {};
+  const ticketToken = params.ticketToken || params.bookingId || '';
   const [booking, setBooking] = useState<TicketDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

@@ -115,8 +115,15 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
     const useInApp = await getInAppBrowserPreference();
     if (useInApp) {
       try {
-        await WebBrowser.openAuthSessionAsync(url, 'leadrow://');
-        // When auth session closes or redirects
+        const result = await WebBrowser.openAuthSessionAsync(url, 'leadrow://');
+        if (result.type === 'success') {
+          try {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          } catch {}
+          navigation.replace('Ticket', { ticketToken: bookingId });
+          return;
+        }
+        // When auth session closes or user manually dismisses
         await checkAndNavigateToTicket(bookingId);
       } catch {
         Linking.openURL(url).catch(() => {});
@@ -124,6 +131,7 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
       }
     } else {
       Linking.openURL(url).catch(() => {});
+      await checkAndNavigateToTicket(bookingId);
     }
   };
 
