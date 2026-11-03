@@ -1,9 +1,7 @@
-node_modules
-apps/mobile
-packages/seat-map
+**/node_modules
 .git
 .agents
 *.log
 .env
-.env.local
-
+.env.*
+.expo
