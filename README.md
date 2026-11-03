@@ -71,18 +71,20 @@ Lead Row is architected for deployment across scalable serverless or containeriz
 
 ```mermaid
 graph LR
-    User["Android Mobile App"] -->|HTTPS| Vercel["Vercel Serverless API / Cloud Run"]
-    Vercel -->|Atomic SET NX EX| Redis[("Managed Redis Cluster")]
-    Vercel -->|Transactions & Queries| Postgres[("Managed PostgreSQL (Neon / Supabase)")]
-    Vercel -->|Serverless Webhook Handler| FLW["Flutterwave"]
+    User["Android Mobile App"] -->|HTTPS| Render["Render Containerized API (lead-row-api.onrender.com)"]
+    Render -->|Atomic SET NX EX| Redis[("Managed Redis Cluster (Redis Cloud)")]
+    Render -->|Transactions & Queries| Postgres[("Managed PostgreSQL (Neon Serverless)")]
+    Render -->|Serverless Webhook Handler| FLW["Flutterwave"]
     Redis -->|Hold Sweeps & Queues| Workers["BullMQ Worker Services"]
     Workers -->|Confirmations & Refunds| Postgres
 ```
 
 ### Core Infrastructure Components
-* **REST API Layer**:
-  - **Vercel Serverless Function** via [`api/index.ts`](./api/index.ts) and [`vercel.json`](./vercel.json) rewrite engine.
-  - **Docker Containerization** via multi-stage [`Dockerfile`](./Dockerfile) for deployment on Railway, Render, Fly.io, or any Linux VPS.
+* **REST API Layer (Live on Render)**:
+  - **Live URL**: [`https://lead-row-api.onrender.com`](https://lead-row-api.onrender.com)
+  - **Health Endpoint**: `GET https://lead-row-api.onrender.com/health` (HTTP 200 OK)
+  - **Docker Containerization** via multi-stage [`Dockerfile`](./Dockerfile) deployed on Render.
+  - Optional serverless entrypoint via [`api/index.ts`](./api/index.ts) and [`vercel.json`](./vercel.json).
 * **Relational Database (PostgreSQL)**:
   - Hosted on **Neon Serverless PostgreSQL** / Supabase.
   - Sized connection pool (`connection_limit=20`, `pool_timeout=10s`) preventing process thrashing.
