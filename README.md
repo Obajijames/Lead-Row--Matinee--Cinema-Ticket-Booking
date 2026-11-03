@@ -25,25 +25,36 @@
 
 Lead Row's mobile client is built on **React Native (Expo SDK 51)** and compiled for Android using Expo Application Services (EAS Build).
 
+> [!TIP]
+> ### 📱 Download Verified Android Test Build
+> * **Direct EAS Build Link**: [**Lead Row Android APK on Expo.dev**](https://expo.dev/accounts/mfemjames/projects/lead-row/builds/e0a5f6e3-7195-47d8-8390-d5dadd7b9fb1)
+> * **Build ID**: `e0a5f6e3-7195-47d8-8390-d5dadd7b9fb1`
+> * **Expo Project**: `@mfemjames/lead-row`
+> * **Package Name**: `com.leadrow.app`
+> * **Build Profile**: `preview` / `development` (Standalone `.apk`)
+> 
+> You can download the `.apk` directly from the link above or scan the QR code on the Expo build page with your Android phone to install the test application immediately.
+
 ### Build Profile & Package Configuration
 * **Application ID / Package**: `com.leadrow.app` (configured in [`apps/mobile/app.json`](./apps/mobile/app.json))
 * **Build Target**: Standalone Development & Production APK (`buildType: "apk"` configured in [`apps/mobile/eas.json`](./apps/mobile/eas.json))
 * **Target SDK**: Android API Level 34 (Android 14)
 * **Tested Architecture**: `arm64-v8a`, `armeabi-v7a`, `x86_64`
 
-### How to Generate the APK
+### How to Generate New Builds
 ```powershell
 # Navigate to the mobile package
 cd apps/mobile
 
-# Build the standalone Android APK in the cloud
-eas build --profile development --platform android
+# Build a standalone Android APK in the cloud
+npx eas-cli build --profile preview --platform android
 ```
-Once the cloud compilation completes, EAS outputs a direct `.apk` download URL and QR code. Download and install `Lead Row (Dev).apk` onto any Android phone or emulator.
+Once the cloud compilation completes, EAS outputs a direct `.apk` download URL and QR code. Download and install `Lead Row.apk` onto any Android phone or emulator.
 
-To run the app with live hot reloading:
+To run the app locally with live hot reloading:
 ```powershell
-npx expo start --dev-client
+cd apps/mobile
+npx expo start --go --tunnel -c
 ```
 
 ---

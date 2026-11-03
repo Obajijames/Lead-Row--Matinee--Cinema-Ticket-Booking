@@ -29,3 +29,8 @@
 - **Context:** Blockbuster ticket drops (e.g., Marvel premieres) can overwhelm database connection pools.
 - **Decision:** Built a per-showtime virtual waiting room with configurable active session caps (`WAITING_ROOM_ACTIVE_CAP=50`) and admission rates (`WAITING_ROOM_ADMISSION_RATE_PER_MIN=10`). Queue polling includes server-guided intervals with randomized jitter ($\pm 2-5\text{s}$).
 - **Learning:** Adding jitter prevents the "thundering herd" problem where hundreds of waiting clients poll at the exact same second.
+
+## Entry 7: Cloud Compilation & EAS Build Artifacts
+- **Context:** Building a standalone `.apk` for Android testing without requiring local Android Studio SDK installation on host machines.
+- **Decision:** Utilized Expo Application Services (EAS Build) with `buildType: "apk"` under `eas.json`. Pinned `react-native-svg@15.2.0` to preserve compatibility with React Native 0.74 codegen while compiling standalone bundles.
+- **Learning:** EAS cloud builds generate reproducible artifacts with cryptographic keystores stored securely in the cloud. Pinned build artifacts can be directly installed on Android physical hardware for real-world gesture, SVG rendering, and network resilience testing. Build Artifact: `https://expo.dev/accounts/mfemjames/projects/lead-row/builds/e0a5f6e3-7195-47d8-8390-d5dadd7b9fb1`.
