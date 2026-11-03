@@ -78,7 +78,7 @@ webhookRouter.post('/flutterwave', async (req: Request, res: Response) => {
           webhookEventId: webhookRecord.id,
           transactionId: data.id,
           txRef: data.tx_ref,
-          amountKobo,
+          amountKobo: amountInKobo,
           currency: data.currency,
           providerEventId,
           requestId,
