@@ -2,11 +2,10 @@
 import React, { useEffect } from 'react';
 import {
   View,
+  ScrollView,
   Pressable,
   StyleSheet,
-  StyleProp,
   ViewStyle,
-  useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
@@ -16,7 +15,7 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { spacingVal } from '../tokens';
+import { colorRole, spacingVal } from '../tokens';
 import { useTheme } from '../theme/ThemeContext';
 import { Text } from './Text';
 
@@ -35,7 +34,7 @@ export interface SeatMapProps {
   seats: SeatItem[];
   selectedSeatIds: string[];
   onToggleSeat: (seatId: string) => void;
-  style?: StyleProp<ViewStyle>;
+  style?: ViewStyle;
 }
 
 interface SeatCellProps {
@@ -44,8 +43,6 @@ interface SeatCellProps {
   onPress: (seat: SeatItem) => void;
   visual: { bg: string; border: string; textColor: string };
   isInteractive: boolean;
-  size: number;
-  marginHorizontal: number;
 }
 
 const SeatCell: React.FC<SeatCellProps> = ({
@@ -54,8 +51,6 @@ const SeatCell: React.FC<SeatCellProps> = ({
   onPress,
   visual,
   isInteractive,
-  size,
-  marginHorizontal,
 }) => {
   const scale = useSharedValue(1);
 
@@ -86,11 +81,6 @@ const SeatCell: React.FC<SeatCellProps> = ({
     }
   };
 
-  // Font size scales with seat size
-  const fontSize = size >= 26 ? 11 : size >= 22 ? 9.5 : size >= 18 ? 8 : 7;
-  // Accessible touch target padding
-  const hitPadding = Math.max(6, Math.floor((44 - size) / 2));
-
   return (
     <Animated.View style={animatedStyle}>
       <Pressable
@@ -98,12 +88,6 @@ const SeatCell: React.FC<SeatCellProps> = ({
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={!isInteractive && !isSelected}
-        hitSlop={{
-          top: hitPadding,
-          bottom: hitPadding,
-          left: Math.min(hitPadding, 6),
-          right: Math.min(hitPadding, 6),
-        }}
         accessibilityRole="button"
         accessibilityLabel={`Seat ${seat.rowLabel}${seat.seatNumber}, ${seat.seatType}, ${
           isSelected ? 'Selected' : seat.status
@@ -111,10 +95,6 @@ const SeatCell: React.FC<SeatCellProps> = ({
         style={({ pressed }) => [
           styles.seat,
           {
-            width: size,
-            height: size,
-            borderRadius: Math.max(4, Math.round(size * 0.22)),
-            marginHorizontal,
             backgroundColor: visual.bg,
             borderColor: visual.border,
             opacity: pressed && isInteractive ? 0.75 : 1,
@@ -123,10 +103,10 @@ const SeatCell: React.FC<SeatCellProps> = ({
       >
         <Text
           variant="label-small"
-          style={[styles.seatNumber, { fontSize, color: visual.textColor }]}
+          style={[styles.seatNumber, { color: visual.textColor }]}
         >
           {seat.seatType === 'WHEELCHAIR_ACCESSIBLE' ? (
-            <Ionicons name="accessibility" size={Math.max(10, Math.round(size * 0.55))} color={visual.textColor} />
+            <Ionicons name="accessibility" size={13} color={visual.textColor} />
           ) : (
             seat.seatNumber
           )}
@@ -143,25 +123,9 @@ export const SeatMap: React.FC<SeatMapProps> = ({
   style,
 }) => {
   const { colors, isDark } = useTheme();
-  const { width: windowWidth } = useWindowDimensions();
 
   // Group seats by row
   const rowLabels = Array.from(new Set(seats.map((s) => s.rowLabel))).sort();
-
-  // Find max seats in any single row to calculate responsive sizing
-  const maxSeatsPerRow = Math.max(
-    ...rowLabels.map((row) => seats.filter((s) => s.rowLabel === row).length),
-    1
-  );
-
-  // Responsive seat dimensions so the entire grid fits on-screen width with ZERO horizontal swiping
-  const rowHeaderWidth = 20;
-  // Available width = Screen width - container padding (32) - left & right row headers (40)
-  const availableWidth = Math.max(windowWidth - 72, 260);
-  const calculatedSeatSize = Math.floor((availableWidth - (maxSeatsPerRow - 1) * 4) / maxSeatsPerRow);
-  const seatSize = Math.max(16, Math.min(34, calculatedSeatSize));
-  const seatMargin = Math.max(1.5, Math.min(3, Math.round(seatSize * 0.08)));
-  const rowSpacing = seatSize < 24 ? 6 : 8;
 
   const handleSeatPress = (seat: SeatItem) => {
     if (seat.status === 'SOLD' || seat.status === 'HELD') return;
@@ -225,7 +189,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
 
   return (
     <View style={[styles.container, style]}>
-      {/* Cinema Screen Arc at Top */}
+      {/* Cinema Screen Indicator */}
       <View style={styles.screenWrapper}>
         <View
           style={[
@@ -238,7 +202,61 @@ export const SeatMap: React.FC<SeatMapProps> = ({
         </Text>
       </View>
 
-      {/* Legend Directly Below Screen */}
+      {/* Interactive Seat Grid */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={true}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.grid}>
+          {rowLabels.map((row) => {
+            const rowSeats = seats
+              .filter((s) => s.rowLabel === row)
+              .sort((a, b) => a.seatNumber - b.seatNumber);
+
+            return (
+              <View key={row} style={styles.rowContainer}>
+                <Text
+                  variant="label-small"
+                  colorRoleName="on-surface-variant"
+                  style={styles.rowHeader}
+                >
+                  {row}
+                </Text>
+
+                <View style={styles.seatsRow}>
+                  {rowSeats.map((seat) => {
+                    const isSelected = selectedSeatIds.includes(seat.id);
+                    const visual = getSeatVisuals(seat, isSelected);
+                    const isInteractive = seat.status === 'AVAILABLE';
+
+                    return (
+                      <SeatCell
+                        key={seat.id}
+                        seat={seat}
+                        isSelected={isSelected}
+                        visual={visual}
+                        isInteractive={isInteractive}
+                        onPress={handleSeatPress}
+                      />
+                    );
+                  })}
+                </View>
+
+                <Text
+                  variant="label-small"
+                  colorRoleName="on-surface-variant"
+                  style={styles.rowHeader}
+                >
+                  {row}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+
+      {/* Legend */}
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View
@@ -268,11 +286,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           <View
             style={[
               styles.legendDot,
-              {
-                backgroundColor: isDark ? '#4E2600' : '#FEF3C7',
-                borderColor: '#D97706',
-                borderWidth: 1,
-              },
+              { backgroundColor: isDark ? '#4E2600' : '#FEF3C7' },
             ]}
           />
           <Text variant="label-small" colorRoleName="on-surface-variant">
@@ -308,56 +322,6 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           </Text>
         </View>
       </View>
-
-      {/* Full-Width Interactive Seat Grid (No horizontal swiping needed) */}
-      <View style={styles.gridContainer}>
-        {rowLabels.map((row) => {
-          const rowSeats = seats
-            .filter((s) => s.rowLabel === row)
-            .sort((a, b) => a.seatNumber - b.seatNumber);
-
-          return (
-            <View key={row} style={[styles.rowContainer, { marginBottom: rowSpacing }]}>
-              <Text
-                variant="label-small"
-                colorRoleName="on-surface-variant"
-                style={[styles.rowHeader, { width: rowHeaderWidth }]}
-              >
-                {row}
-              </Text>
-
-              <View style={styles.seatsRow}>
-                {rowSeats.map((seat) => {
-                  const isSelected = selectedSeatIds.includes(seat.id);
-                  const visual = getSeatVisuals(seat, isSelected);
-                  const isInteractive = seat.status === 'AVAILABLE';
-
-                  return (
-                    <SeatCell
-                      key={seat.id}
-                      seat={seat}
-                      isSelected={isSelected}
-                      visual={visual}
-                      isInteractive={isInteractive}
-                      size={seatSize}
-                      marginHorizontal={seatMargin}
-                      onPress={handleSeatPress}
-                    />
-                  );
-                })}
-              </View>
-
-              <Text
-                variant="label-small"
-                colorRoleName="on-surface-variant"
-                style={[styles.rowHeader, { width: rowHeaderWidth }]}
-              >
-                {row}
-              </Text>
-            </View>
-          );
-        })}
-      </View>
     </View>
   );
 };
@@ -365,16 +329,13 @@ export const SeatMap: React.FC<SeatMapProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: spacingVal('md', 16),
-    alignItems: 'center',
-    width: '100%',
   },
   screenWrapper: {
     alignItems: 'center',
-    marginBottom: spacingVal('sm', 12),
-    width: '100%',
+    marginBottom: spacingVal('xl', 24),
   },
   screenCurve: {
-    width: '78%',
+    width: '80%',
     height: 12,
     borderTopWidth: 4,
     borderRadius: 8,
@@ -384,14 +345,45 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     fontWeight: '700',
   },
+  scrollContent: {
+    paddingHorizontal: spacingVal('md', 16),
+  },
+  grid: {
+    alignItems: 'center',
+  },
+  rowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacingVal('xs', 8),
+  },
+  rowHeader: {
+    width: 24,
+    textAlign: 'center',
+    fontWeight: '700',
+  },
+  seatsRow: {
+    flexDirection: 'row',
+    marginHorizontal: spacingVal('xs', 8),
+  },
+  seat: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  seatNumber: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   legend: {
     flexDirection: 'row',
     justifyContent: 'center',
-    alignItems: 'center',
     flexWrap: 'wrap',
-    marginBottom: spacingVal('lg', 20),
-    gap: spacingVal('sm', 12),
-    paddingHorizontal: spacingVal('sm', 12),
+    marginTop: spacingVal('lg', 20),
+    gap: spacingVal('md', 16),
   },
   legendItem: {
     flexDirection: 'row',
@@ -399,38 +391,9 @@ const styles = StyleSheet.create({
     gap: spacingVal('xxs', 4),
   },
   legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-  },
-  gridContainer: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-  rowHeader: {
-    textAlign: 'center',
-    fontWeight: '700',
-  },
-  seatsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  seat: {
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  seatNumber: {
-    fontWeight: '700',
-    textAlign: 'center',
+    width: 14,
+    height: 14,
+    borderRadius: 4,
   },
 });
 
