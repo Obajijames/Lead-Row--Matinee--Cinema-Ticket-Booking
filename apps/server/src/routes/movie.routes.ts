@@ -104,7 +104,8 @@ router.get(
   rateLimiter({ windowMs: 60000, max: 60, keyPrefix: 'rl:movies:with-showtimes' }),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await MovieService.getMoviesWithActiveShowtimes();
+      const date = req.query.date as string | undefined;
+      const result = await MovieService.getMoviesWithActiveShowtimes(date);
 
       return res.status(200).json({
         success: true,

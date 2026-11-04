@@ -1,18 +1,20 @@
 // apps/mobile/src/screens/MovieDetailsScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
   Pressable,
+  TouchableOpacity,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
-import { colorRole, spacingVal } from '../tokens';
+import { colorRole, spacingVal, radiusVal } from '../tokens';
 import { useTheme } from '../theme/ThemeContext';
 import {
   Text,
@@ -79,9 +81,68 @@ export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
     fetchDetails();
   }, [movieId]);
 
+  // 1-Week Sunday to Saturday schedule generator
+  const weekDays = useMemo(() => {
+    const now = new Date();
+    const currentDayOfWeek = now.getDay(); // 0: Sunday, 1: Monday ... 6: Saturday
+    const days: Array<{
+      key: string;
+      dayName: string;
+      dateNumber: number;
+      monthName: string;
+      isToday: boolean;
+    }> = [];
+
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(now);
+      let dayDiff = i - currentDayOfWeek;
+      if (dayDiff < 0) {
+        dayDiff += 7;
+      }
+      d.setDate(now.getDate() + dayDiff);
+      d.setHours(0, 0, 0, 0);
+
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const dateNum = String(d.getDate()).padStart(2, '0');
+      const key = `${year}-${month}-${dateNum}`;
+
+      days.push({
+        key,
+        dayName: dayNames[i],
+        dateNumber: d.getDate(),
+        monthName: monthNames[d.getMonth()],
+        isToday: dayDiff === 0,
+      });
+    }
+
+    return days;
+  }, []);
+
+  const [selectedDayKey, setSelectedDayKey] = useState<string>('all');
+
+  const filteredShowtimes = useMemo(() => {
+    if (!movie?.showtimes) return [];
+    if (selectedDayKey === 'all') return movie.showtimes;
+
+    return movie.showtimes.filter((st) => {
+      const stDate = new Date(st.startTime);
+      const stYear = stDate.getFullYear();
+      const stMonth = String(stDate.getMonth() + 1).padStart(2, '0');
+      const stDay = String(stDate.getDate()).padStart(2, '0');
+      const stKey = `${stYear}-${stMonth}-${stDay}`;
+      return stKey === selectedDayKey;
+    });
+  }, [movie?.showtimes, selectedDayKey]);
+
   const formatShowtime = (iso: string): string => {
     const d = new Date(iso);
-    return d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const timeStr = d.toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    return `${dateStr} • ${timeStr}`;
   };
 
   if (isLoading) {
@@ -162,13 +223,92 @@ export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
             {movie.overview}
           </Text>
 
-          {/* Showtimes & Booking Section */}
-          <Text variant="title-medium" colorRoleName="on-surface" style={styles.sectionTitle}>
-            Available Showtimes
-          </Text>
+          {/* Showtimes & Booking Section with 1-Week (Sunday to Saturday) schedule */}
+          <View style={styles.showtimeTitleRow}>
+            <Text variant="title-medium" colorRoleName="on-surface" style={styles.sectionTitle}>
+              Available Showtimes
+            </Text>
+            <Badge label="1-WEEK SCHEDULE" variant="warning" />
+          </View>
 
-          {movie.showtimes && movie.showtimes.length > 0 ? (
-            movie.showtimes.map((st) => (
+          {/* 1-Week Sunday to Saturday selector */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.weekSelectorScroll}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                try {
+                  Haptics.selectionAsync();
+                } catch {}
+                setSelectedDayKey('all');
+              }}
+              style={[
+                styles.dayChip,
+                {
+                  backgroundColor: selectedDayKey === 'all'
+                    ? colors.primaryContainer
+                    : colors.surfaceContainer,
+                  borderColor: selectedDayKey === 'all'
+                    ? colors.primary
+                    : colors.outlineVariant,
+                },
+              ]}
+            >
+              <Text
+                variant="label-small"
+                style={{
+                  fontWeight: '700',
+                  color: selectedDayKey === 'all' ? colors.primary : colors.onSurface,
+                }}
+              >
+                All Days
+              </Text>
+            </TouchableOpacity>
+
+            {weekDays.map((day) => {
+              const isSelected = selectedDayKey === day.key;
+              return (
+                <TouchableOpacity
+                  key={day.dayName}
+                  onPress={() => {
+                    try {
+                      Haptics.selectionAsync();
+                    } catch {}
+                    setSelectedDayKey(day.key);
+                  }}
+                  style={[
+                    styles.dayChip,
+                    {
+                      backgroundColor: isSelected
+                        ? colors.primaryContainer
+                        : colors.surfaceContainer,
+                      borderColor: isSelected
+                        ? colors.primary
+                        : colors.outlineVariant,
+                    },
+                  ]}
+                >
+                  <Text
+                    variant="label-small"
+                    style={{
+                      fontWeight: isSelected ? '800' : '600',
+                      color: isSelected ? colors.primary : colors.onSurfaceVariant,
+                    }}
+                  >
+                    {day.dayName} {day.dateNumber}
+                  </Text>
+                  {day.isToday && (
+                    <View style={[styles.todayIndicatorDot, { backgroundColor: colors.primary }]} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {filteredShowtimes.length > 0 ? (
+            filteredShowtimes.map((st) => (
               <Card key={st.id} style={styles.showtimeCard}>
                 <View style={styles.showtimeHeader}>
                   <View>
@@ -202,8 +342,9 @@ export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
             ))
           ) : (
             <Card style={styles.noShowtimesCard}>
-              <Text variant="body-medium" colorRoleName="on-surface-variant">
-                No active showtimes currently scheduled for this title. Please check back shortly!
+              <Ionicons name="calendar-outline" size={24} color={colors.onSurfaceVariant} style={{ marginBottom: 6 }} />
+              <Text variant="body-medium" colorRoleName="on-surface-variant" style={{ textAlign: 'center' }}>
+                No active showtimes scheduled for this title on the selected day. Try selecting "All Days" or another day of the week!
               </Text>
             </Card>
           )}
@@ -294,6 +435,32 @@ const styles = StyleSheet.create({
   noShowtimesCard: {
     padding: spacingVal('md', 16),
     alignItems: 'center',
+  },
+  showtimeTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacingVal('md', 16),
+    marginBottom: spacingVal('xs', 8),
+  },
+  weekSelectorScroll: {
+    paddingVertical: spacingVal('xs', 8),
+    gap: spacingVal('xs', 8),
+    marginBottom: spacingVal('sm', 12),
+  },
+  dayChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radiusVal('md', 12),
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todayIndicatorDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    marginTop: 2,
   },
 });
 

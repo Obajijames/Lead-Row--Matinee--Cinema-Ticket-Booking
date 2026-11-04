@@ -270,11 +270,22 @@ export class MovieService {
   /**
    * Fetches distinct movies that currently have active, bookable upcoming showtimes.
    */
-  static async getMoviesWithActiveShowtimes(): Promise<MovieListResponseDTO> {
+  static async getMoviesWithActiveShowtimes(dateFilter?: string): Promise<MovieListResponseDTO> {
+    let startTimeFilter: any = { gte: new Date() };
+
+    if (dateFilter) {
+      const startOfDay = new Date(`${dateFilter}T00:00:00.000Z`);
+      const endOfDay = new Date(`${dateFilter}T23:59:59.999Z`);
+      startTimeFilter = {
+        gte: startOfDay > new Date() ? startOfDay : new Date(),
+        lte: endOfDay,
+      };
+    }
+
     const showtimes = await readClient.showtime.findMany({
       where: {
         status: ShowtimeStatus.BOOKING_OPEN,
-        startTime: { gte: new Date() },
+        startTime: startTimeFilter,
       },
       include: {
         movie: true,
@@ -287,6 +298,15 @@ export class MovieService {
 
     const movieMap = new Map<string, any>();
     for (const st of showtimes) {
+      const showtimeEntry = {
+        id: st.id,
+        startTime: st.startTime.toISOString(),
+        endTime: st.endTime.toISOString(),
+        cinemaName: st.auditorium.cinema.name,
+        auditoriumName: st.auditorium.name,
+        basePriceKobo: st.basePriceKobo,
+      };
+
       if (!movieMap.has(st.movieId)) {
         movieMap.set(st.movieId, {
           id: st.movie.id,
@@ -302,9 +322,11 @@ export class MovieService {
           nextShowtime: st.startTime.toISOString(),
           cinemaName: st.auditorium.cinema.name,
           lowestPriceKobo: st.basePriceKobo,
+          showtimes: [showtimeEntry],
         });
       } else {
         const existing = movieMap.get(st.movieId);
+        existing.showtimes.push(showtimeEntry);
         if (st.basePriceKobo < existing.lowestPriceKobo) {
           existing.lowestPriceKobo = st.basePriceKobo;
         }

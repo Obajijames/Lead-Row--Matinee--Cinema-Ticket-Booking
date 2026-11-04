@@ -61,6 +61,10 @@ export interface MovieDTO {
   voteCount: number;
   genres?: string[];
   tagline?: string | null;
+  nextShowtime?: string;
+  cinemaName?: string;
+  lowestPriceKobo?: number;
+  showtimes?: any[];
 }
 
 export interface MovieListResponseDTO {
