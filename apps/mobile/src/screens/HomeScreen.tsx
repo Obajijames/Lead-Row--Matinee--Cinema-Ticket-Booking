@@ -162,96 +162,6 @@ export const HomeScreen: React.FC = () => {
   const [searchResults, setSearchResults] = useState<MovieItem[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // 1-Week Sunday to Saturday schedule generator
-  const weekDays = useMemo(() => {
-    const now = new Date();
-    const currentDayOfWeek = now.getDay(); // 0: Sunday, 1: Monday ... 6: Saturday
-    const days: Array<{
-      key: string;
-      dayName: string;
-      dateNumber: number;
-      monthName: string;
-      isToday: boolean;
-      rawDate: Date;
-    }> = [];
-
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(now);
-      let dayDiff = i - currentDayOfWeek;
-      if (dayDiff < 0) {
-        dayDiff += 7;
-      }
-      d.setDate(now.getDate() + dayDiff);
-      d.setHours(0, 0, 0, 0);
-
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const dateNum = String(d.getDate()).padStart(2, '0');
-      const key = `${year}-${month}-${dateNum}`;
-
-      days.push({
-        key,
-        dayName: dayNames[i],
-        dateNumber: d.getDate(),
-        monthName: monthNames[d.getMonth()],
-        isToday: dayDiff === 0,
-        rawDate: d,
-      });
-    }
-
-    return days;
-  }, []);
-
-  const todayIndex = weekDays.findIndex((d) => d.isToday);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(todayIndex >= 0 ? todayIndex : 0);
-
-  // Movies & showtimes lined up for the currently selected day of the week
-  const selectedDateKey = weekDays[selectedDayIndex]?.key;
-  const moviesForSelectedDay = useMemo(() => {
-    if (!selectedDateKey) return [];
-
-    return activeShowtimes
-      .map((movie) => {
-        let matchingShowtimes = (movie.showtimes || []).filter((st) => {
-          const stDate = new Date(st.startTime);
-          const stYear = stDate.getFullYear();
-          const stMonth = String(stDate.getMonth() + 1).padStart(2, '0');
-          const stDay = String(stDate.getDate()).padStart(2, '0');
-          const stKey = `${stYear}-${stMonth}-${stDay}`;
-          return stKey === selectedDateKey;
-        });
-
-        // Legacy fallback
-        if (matchingShowtimes.length === 0 && movie.nextShowtime) {
-          const stDate = new Date(movie.nextShowtime);
-          const stYear = stDate.getFullYear();
-          const stMonth = String(stDate.getMonth() + 1).padStart(2, '0');
-          const stDay = String(stDate.getDate()).padStart(2, '0');
-          const stKey = `${stYear}-${stMonth}-${stDay}`;
-          if (stKey === selectedDateKey) {
-            matchingShowtimes = [
-              {
-                id: movie.id,
-                startTime: movie.nextShowtime,
-                cinemaName: movie.cinemaName || 'Filmhouse Cinema',
-                auditoriumName: 'Main Hall',
-                basePriceKobo: movie.lowestPriceKobo || 450000,
-              },
-            ];
-          }
-        }
-
-        return {
-          ...movie,
-          dayShowtimes: matchingShowtimes,
-        };
-      })
-      .filter((movie) => movie.dayShowtimes.length > 0);
-  }, [activeShowtimes, selectedDateKey]);
-
   const performSearch = async (query: string) => {
     const q = query.trim();
     if (q.length === 0) {
@@ -790,7 +700,9 @@ export const HomeScreen: React.FC = () => {
                       </View>
                     </View>
                     <Text variant="label-small" colorRoleName="primary">
-                      1-Week Lineup • Sunday to Saturday
+                      {activeShowtimes.length > 0
+                        ? `${activeShowtimes.length} movies ready to book seats right now`
+                        : 'Checking available theater halls...'}
                     </Text>
                   </View>
 
@@ -820,229 +732,34 @@ export const HomeScreen: React.FC = () => {
                   </TouchableOpacity>
                 </View>
 
-                {/* 1-Week (Sunday to Saturday) Day Selector Bar */}
-                <View style={styles.weekSelectorContainer}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.weekSelectorScroll}
-                  >
-                    {weekDays.map((day, idx) => {
-                      const isSelected = selectedDayIndex === idx;
-                      return (
-                        <TouchableOpacity
-                          key={day.dayName}
-                          onPress={() => {
-                            try {
-                              Haptics.selectionAsync();
-                            } catch {}
-                            setSelectedDayIndex(idx);
-                          }}
-                          activeOpacity={0.7}
-                          style={[
-                            styles.weekDayTab,
-                            {
-                              backgroundColor: isSelected
-                                ? isDark
-                                  ? 'rgba(215, 150, 10, 0.22)'
-                                  : 'rgba(215, 150, 10, 0.14)'
-                                : colors.surfaceContainer,
-                              borderColor: isSelected
-                                ? colors.primary
-                                : colors.outlineVariant,
-                            },
-                          ]}
-                        >
-                          <Text
-                            variant="label-small"
-                            style={[
-                              styles.weekDayName,
-                              {
-                                color: isSelected
-                                  ? colors.primary
-                                  : colors.onSurfaceVariant,
-                                fontWeight: isSelected ? '800' : '600',
-                              },
-                            ]}
-                          >
-                            {day.dayName}
-                          </Text>
-                          <Text
-                            variant="title-medium"
-                            style={[
-                              styles.weekDateNumber,
-                              {
-                                color: isSelected ? colors.primary : colors.onSurface,
-                                fontWeight: '800',
-                              },
-                            ]}
-                          >
-                            {day.dateNumber}
-                          </Text>
-                          {day.isToday ? (
-                            <View style={styles.todayIndicatorRow}>
-                              <View style={[styles.todayDot, { backgroundColor: colors.primary }]} />
-                              <Text variant="label-small" style={{ fontSize: 9, color: colors.primary, fontWeight: '700' }}>
-                                TODAY
-                              </Text>
-                            </View>
-                          ) : (
-                            <Text
-                              variant="label-small"
-                              style={[
-                                styles.monthLabel,
-                                { color: colors.onSurfaceVariant },
-                              ]}
-                            >
-                              {day.monthName}
-                            </Text>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-
-                {/* Lined Up Movies & Bookable Showtimes for Selected Day */}
-                {moviesForSelectedDay.length === 0 ? (
-                  <View style={[styles.emptyDayNotice, { backgroundColor: colors.surfaceContainerLow, borderColor: colors.outlineVariant }]}>
-                    <Ionicons name="calendar-outline" size={28} color={colors.primary} style={{ marginBottom: 6 }} />
-                    <Text variant="title-small" colorRoleName="on-surface" style={{ fontWeight: '700' }}>
-                      No Showtimes Scheduled for {weekDays[selectedDayIndex]?.dayName}
-                    </Text>
-                    <Text variant="body-small" colorRoleName="on-surface-variant" style={{ textAlign: 'center', marginTop: 4 }}>
-                      Select another day of the week above to view available movies and book ahead of time.
+                {activeShowtimes.length === 0 ? (
+                  <View style={{ paddingHorizontal: spacingVal('md', 16), paddingVertical: 12 }}>
+                    <Text variant="body-small" colorRoleName="on-surface-variant">
+                      No active showtimes currently scheduled. Check back shortly.
                     </Text>
                   </View>
                 ) : (
-                  <View style={styles.dayLineupContainer}>
-                    {moviesForSelectedDay.map((movie) => (
-                      <Card
-                        key={movie.id}
-                        style={[
-                          styles.movieLineupCard,
-                          {
-                            backgroundColor: colors.cardBg,
-                            borderColor: colors.cardBorder,
-                          },
-                        ]}
-                      >
-                        <View style={styles.movieLineupTopRow}>
-                          {movie.posterUrl ? (
-                            <Image
-                              source={{ uri: movie.posterUrl }}
-                              style={styles.movieLineupPoster}
-                              contentFit="cover"
-                              transition={200}
-                              cachePolicy="memory-disk"
-                            />
-                          ) : (
-                            <View style={[styles.movieLineupPoster, styles.posterFallback, { backgroundColor: colors.surfaceContainerHigh }]}>
-                              <Ionicons name="film" size={24} color="#8A8A9E" />
-                            </View>
-                          )}
-
-                          <View style={styles.movieLineupInfo}>
-                            <Text
-                              variant="title-small"
-                              colorRoleName="on-surface"
-                              numberOfLines={2}
-                              style={styles.lineupMovieTitle}
-                            >
-                              {movie.title}
-                            </Text>
-
-                            <View style={styles.metaRow}>
-                              <Ionicons name="star" size={12} color="#FFD700" style={{ marginRight: 3 }} />
-                              <Text variant="label-small" style={{ fontWeight: '700', color: colors.onSurface }}>
-                                {movie.voteAverage ? movie.voteAverage.toFixed(1) : '7.5'}
-                              </Text>
-                              {movie.runtimeMinutes ? (
-                                <Text variant="label-small" colorRoleName="on-surface-variant" style={{ marginLeft: 6 }}>
-                                  • {movie.runtimeMinutes} min
-                                </Text>
-                              ) : null}
-                            </View>
-
-                            <View style={styles.lineupLocationRow}>
-                              <Ionicons name="location" size={12} color={colors.primary} style={{ marginRight: 3 }} />
-                              <Text
-                                variant="body-small"
-                                colorRoleName="primary"
-                                numberOfLines={1}
-                                style={{ fontWeight: '600' }}
-                              >
-                                {movie.cinemaName || 'Filmhouse Cinema'}
-                              </Text>
-                            </View>
-
-                            <TouchableOpacity
-                              onPress={() => navigation.navigate('MovieDetails', { movieId: movie.id })}
-                              style={styles.viewDetailsLink}
-                            >
-                              <Text variant="label-small" colorRoleName="secondary" style={{ fontWeight: '700' }}>
-                                View Details & Synopsis →
-                              </Text>
-                            </TouchableOpacity>
-                          </View>
-                        </View>
-
-                        {/* Showtime Pills for this Day */}
-                        <View style={[styles.showtimePillsSection, { borderTopColor: colors.outlineVariant }]}>
-                          <Text variant="label-small" colorRoleName="on-surface-variant" style={styles.showtimePillsHeader}>
-                            AVAILABLE SHOWTIMES:
-                          </Text>
-                          <View style={styles.showtimePillsRow}>
-                            {movie.dayShowtimes.map((st) => {
-                              const stTime = new Date(st.startTime).toLocaleTimeString('en-US', {
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true,
-                              });
-                              const isImax = st.auditoriumName.toLowerCase().includes('imax');
-
-                              return (
-                                <TouchableOpacity
-                                  key={st.id}
-                                  onPress={() => {
-                                    try {
-                                      Haptics.selectionAsync();
-                                    } catch {}
-                                    navigation.navigate('SeatMap', { showtimeId: st.id });
-                                  }}
-                                  activeOpacity={0.7}
-                                  style={[
-                                    styles.showtimePill,
-                                    {
-                                      backgroundColor: isImax
-                                        ? isDark
-                                          ? 'rgba(215, 150, 10, 0.22)'
-                                          : 'rgba(215, 150, 10, 0.12)'
-                                        : colors.surfaceContainerHigh,
-                                      borderColor: isImax ? colors.primary : colors.outlineVariant,
-                                    },
-                                  ]}
-                                >
-                                  <Text
-                                    variant="label-medium"
-                                    style={[
-                                      styles.showtimePillTime,
-                                      { color: isImax ? colors.primary : colors.onSurface },
-                                    ]}
-                                  >
-                                    {stTime}
-                                  </Text>
-                                  <Text variant="label-small" style={{ fontSize: 9, color: colors.onSurfaceVariant, marginTop: 1 }}>
-                                    {isImax ? 'IMAX' : 'Standard'} • ₦{(st.basePriceKobo / 100).toLocaleString()}
-                                  </Text>
-                                </TouchableOpacity>
-                              );
-                            })}
-                          </View>
-                        </View>
-                      </Card>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalScroll}
+                  >
+                    {activeShowtimes.map((movie) => (
+                      <View key={movie.id} style={styles.cardWrapper}>
+                        <MovieCard
+                          title={movie.title}
+                          posterUrl={movie.posterUrl}
+                          rating={movie.voteAverage}
+                          releaseYear={
+                            movie.lowestPriceKobo
+                              ? `From ₦${(movie.lowestPriceKobo / 100).toLocaleString()}`
+                              : 'Live Showtimes'
+                          }
+                          onPress={() => navigation.navigate('MovieDetails', { movieId: movie.id })}
+                        />
+                      </View>
                     ))}
-                  </View>
+                  </ScrollView>
                 )}
               </>
             )}
@@ -1521,120 +1238,5 @@ const styles = StyleSheet.create({
   },
   featureTag: {
     marginRight: 6,
-  },
-  weekSelectorContainer: {
-    marginVertical: spacingVal('sm', 12),
-  },
-  weekSelectorScroll: {
-    paddingHorizontal: spacingVal('md', 16),
-    gap: spacingVal('xs', 8),
-  },
-  weekDayTab: {
-    width: 62,
-    height: 74,
-    borderRadius: radiusVal('md', 12),
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 5,
-  },
-  weekDayName: {
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  weekDateNumber: {
-    marginVertical: 1,
-  },
-  todayIndicatorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 2,
-  },
-  todayDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-  },
-  monthLabel: {
-    fontSize: 10,
-  },
-  emptyDayNotice: {
-    marginHorizontal: spacingVal('md', 16),
-    marginVertical: spacingVal('sm', 12),
-    padding: spacingVal('lg', 20),
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radiusVal('lg', 16),
-    borderWidth: 1,
-  },
-  dayLineupContainer: {
-    paddingHorizontal: spacingVal('md', 16),
-    gap: spacingVal('md', 16),
-    marginTop: spacingVal('xs', 8),
-  },
-  movieLineupCard: {
-    padding: spacingVal('md', 16),
-    borderRadius: radiusVal('lg', 16),
-    borderWidth: 1,
-  },
-  movieLineupTopRow: {
-    flexDirection: 'row',
-    marginBottom: spacingVal('sm', 12),
-  },
-  movieLineupPoster: {
-    width: 72,
-    height: 104,
-    borderRadius: radiusVal('sm', 8),
-    backgroundColor: '#0B0B10',
-  },
-  posterFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  movieLineupInfo: {
-    flex: 1,
-    marginLeft: spacingVal('sm', 12),
-    justifyContent: 'space-between',
-  },
-  lineupMovieTitle: {
-    fontWeight: '700',
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  lineupLocationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  viewDetailsLink: {
-    marginTop: 6,
-  },
-  showtimePillsSection: {
-    borderTopWidth: 1,
-    paddingTop: spacingVal('sm', 12),
-  },
-  showtimePillsHeader: {
-    letterSpacing: 1,
-    fontWeight: '700',
-    marginBottom: spacingVal('xs', 8),
-  },
-  showtimePillsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacingVal('xs', 8),
-  },
-  showtimePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radiusVal('sm', 8),
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  showtimePillTime: {
-    fontWeight: '700',
   },
 });
