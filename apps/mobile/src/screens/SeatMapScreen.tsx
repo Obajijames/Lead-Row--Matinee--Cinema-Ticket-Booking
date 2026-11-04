@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
+  Pressable,
   StyleSheet,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal } from '../tokens';
 import { useTheme } from '../theme/ThemeContext';
@@ -141,13 +143,55 @@ export const SeatMapScreen: React.FC<Props> = ({ route, navigation }) => {
         onBack={() => navigation.goBack()}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Interactive Seat Grid */}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Interactive Seat Grid - Fully responsive on-screen without horizontal swiping */}
         <SeatMap
           seats={data.seats}
           selectedSeatIds={selectedSeatIds}
           onToggleSeat={toggleSeat}
         />
+
+        {/* Selected Seats Chips */}
+        {selectedSeatIds.length > 0 && (
+          <View style={styles.selectedSeatsWrapper}>
+            <Text variant="label-medium" colorRoleName="on-surface-variant" style={styles.selectedSeatsTitle}>
+              Selected Seats ({selectedSeatIds.length}/10)
+            </Text>
+            <View style={styles.chipsRow}>
+              {selectedSeatIds.map((id) => {
+                const seat = data.seats.find((s) => s.id === id);
+                if (!seat) return null;
+                const isVip = seat.seatType === 'VIP';
+                return (
+                  <Pressable
+                    key={id}
+                    onPress={() => toggleSeat(id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove seat ${seat.rowLabel}${seat.seatNumber}`}
+                    style={[
+                      styles.seatChip,
+                      {
+                        backgroundColor: colors.surfaceContainer,
+                        borderColor: isVip ? colors.primary : colors.outlineVariant,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={isVip ? 'star' : 'film-outline'}
+                      size={12}
+                      color={isVip ? colors.primary : colors.onSurface}
+                      style={{ marginRight: 5 }}
+                    />
+                    <Text variant="label-small" style={{ fontWeight: '700', color: colors.onSurface }}>
+                      Row {seat.rowLabel}{seat.seatNumber}
+                    </Text>
+                    <Ionicons name="close-circle" size={14} color={colors.onSurfaceVariant} style={{ marginLeft: 6 }} />
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Real-time Order Summary */}
         {selectedSeatIds.length > 0 ? (
@@ -205,7 +249,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   scrollContent: {
-    paddingBottom: 100,
+    paddingBottom: 130,
+  },
+  selectedSeatsWrapper: {
+    paddingHorizontal: spacingVal('md', 16),
+    marginTop: spacingVal('md', 16),
+  },
+  selectedSeatsTitle: {
+    fontWeight: '700',
+    marginBottom: spacingVal('xs', 8),
+  },
+  chipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacingVal('xs', 8),
+  },
+  seatChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   summaryWrapper: {
     paddingHorizontal: spacingVal('md', 16),
