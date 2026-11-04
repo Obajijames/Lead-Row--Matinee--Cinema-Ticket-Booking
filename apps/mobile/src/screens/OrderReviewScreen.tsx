@@ -18,6 +18,7 @@ import { colorRole, spacingVal } from '../tokens';
 import { useTheme } from '../theme/ThemeContext';
 import * as WebBrowser from 'expo-web-browser';
 import { getInAppBrowserPreference } from '../utils/browserPreference';
+import { saveUserBookingId, saveUserEmail } from '../utils/bookingStorage';
 import {
   Text,
   ScreenHeader,
@@ -161,6 +162,9 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
       });
 
       setCheckoutData(res);
+      // Persist booking ID and guest email locally for My Tickets tab retrieval
+      await saveUserBookingId(res.bookingId);
+      await saveUserEmail(customerEmail.trim());
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch {}

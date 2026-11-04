@@ -23,6 +23,7 @@ import {
   Button,
 } from '../components';
 import { apiRequest } from '../api/client';
+import { saveUserBookingId } from '../utils/bookingStorage';
 import QRCode from 'react-native-qrcode-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Ticket'>;
@@ -55,6 +56,9 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
 
   useEffect(() => {
     async function fetchTicket() {
+      if (ticketToken) {
+        saveUserBookingId(ticketToken).catch(() => {});
+      }
       try {
         const data = await apiRequest<TicketDetails>(`/v1/bookings/${ticketToken}`);
         setBooking(data);

@@ -1,18 +1,22 @@
 // apps/mobile/src/screens/BookingsScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
-import { colorRole, spacingVal, radiusVal } from '../tokens';
+import { spacingVal, radiusVal } from '../tokens';
 import { useTheme } from '../theme/ThemeContext';
+import { apiRequest } from '../api/client';
+import { getUserBookingIds, getUserEmail } from '../utils/bookingStorage';
 import {
   Text,
   Card,
@@ -21,49 +25,72 @@ import {
   EmptyState,
 } from '../components';
 
-interface BookingRecord {
+export interface BookingRecord {
   id: string;
   movieTitle: string;
+  posterUrl?: string | null;
   cinemaName: string;
   auditoriumName: string;
   seats: string[];
   startTime: string;
   totalAmountKobo: number;
-  status: 'CONFIRMED' | 'PENDING' | 'USED';
+  status: 'CONFIRMED' | 'PENDING' | 'USED' | 'CANCELLED';
+  ticketToken?: string;
+  createdAt?: string;
 }
-
-const SAMPLE_BOOKINGS: BookingRecord[] = [
-  {
-    id: 'bkg_10928a-live',
-    movieTitle: 'Dune: Part Two',
-    cinemaName: 'Filmhouse IMAX Lekki',
-    auditoriumName: 'Screen 1 (IMAX)',
-    seats: ['D8', 'D9'],
-    startTime: new Date(Date.now() + 86400000).toISOString(),
-    totalAmountKobo: 1350000,
-    status: 'CONFIRMED',
-  },
-  {
-    id: 'bkg_09823f-live',
-    movieTitle: 'Deadpool & Wolverine',
-    cinemaName: 'Silverbird Galleria Victoria Island',
-    auditoriumName: 'Cinema 2',
-    seats: ['F12'],
-    startTime: new Date(Date.now() - 86400000 * 3).toISOString(),
-    totalAmountKobo: 500000,
-    status: 'USED',
-  },
-];
 
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
-  const [bookings] = useState<BookingRecord[]>(SAMPLE_BOOKINGS);
+  const [bookings, setBookings] = useState<BookingRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const filteredBookings = bookings.filter((b) =>
-    activeTab === 'upcoming' ? b.status === 'CONFIRMED' : b.status === 'USED'
+  const fetchBookings = async (showLoading = true) => {
+    if (showLoading) setIsLoading(true);
+    try {
+      const [ids, email] = await Promise.all([
+        getUserBookingIds(),
+        getUserEmail(),
+      ]);
+
+      const queryParams: string[] = [];
+      if (ids.length > 0) {
+        queryParams.push(`ids=${ids.join(',')}`);
+      }
+      if (email) {
+        queryParams.push(`email=${encodeURIComponent(email)}`);
+      }
+
+      const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+      const res = await apiRequest<BookingRecord[]>(`/v1/bookings${queryString}`);
+
+      if (Array.isArray(res)) {
+        setBookings(res);
+      }
+    } catch (err) {
+      console.warn('Failed to load bookings:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookings(bookings.length === 0);
+    }, [])
   );
+
+  const onRefresh = () => {
+    setIsRefreshing(true);
+    fetchBookings(false);
+  };
+
+  const upcomingBookings = bookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'PENDING');
+  const pastBookings = bookings.filter((b) => b.status === 'USED' || b.status === 'CANCELLED');
+  const filteredBookings = activeTab === 'upcoming' ? upcomingBookings : pastBookings;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -93,7 +120,7 @@ export const BookingsScreen: React.FC = () => {
               colorRoleName={activeTab === 'upcoming' ? 'primary' : 'on-surface-variant'}
               style={{ fontWeight: '700' }}
             >
-              Upcoming ({bookings.filter((b) => b.status === 'CONFIRMED').length})
+              Upcoming ({upcomingBookings.length})
             </Text>
           </TouchableOpacity>
 
@@ -112,14 +139,31 @@ export const BookingsScreen: React.FC = () => {
               colorRoleName={activeTab === 'past' ? 'primary' : 'on-surface-variant'}
               style={{ fontWeight: '700' }}
             >
-              Past Bookings
+              Past Bookings ({pastBookings.length})
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {filteredBookings.length === 0 ? (
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
+      >
+        {isLoading && !isRefreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text variant="body-small" colorRoleName="on-surface-variant" style={{ marginTop: 12 }}>
+              Loading your tickets...
+            </Text>
+          </View>
+        ) : filteredBookings.length === 0 ? (
           <EmptyState
             iconName="ticket"
             title="No Bookings Found"
@@ -134,6 +178,21 @@ export const BookingsScreen: React.FC = () => {
         ) : (
           filteredBookings.map((b) => {
             const isActive = b.status === 'CONFIRMED';
+            const isPending = b.status === 'PENDING';
+
+            let badgeVariant: 'success' | 'warning' | 'neutral' | 'error' = 'neutral';
+            let badgeLabel = 'COMPLETED';
+            if (isActive) {
+              badgeVariant = 'success';
+              badgeLabel = 'ACTIVE TICKET';
+            } else if (isPending) {
+              badgeVariant = 'warning';
+              badgeLabel = 'PENDING PAYMENT';
+            } else if (b.status === 'CANCELLED') {
+              badgeVariant = 'error';
+              badgeLabel = 'CANCELLED';
+            }
+
             return (
               <Card
                 key={b.id}
@@ -152,12 +211,9 @@ export const BookingsScreen: React.FC = () => {
                 ]}
               >
                 <View style={styles.cardHeader}>
-                  <Badge
-                    label={isActive ? 'ACTIVE TICKET' : 'COMPLETED'}
-                    variant={isActive ? 'success' : 'neutral'}
-                  />
+                  <Badge label={badgeLabel} variant={badgeVariant} />
                   <Text variant="label-small" colorRoleName="outline">
-                    #{b.id.slice(0, 10).toUpperCase()}
+                    #{b.id.slice(0, 8).toUpperCase()}
                   </Text>
                 </View>
 
@@ -171,9 +227,23 @@ export const BookingsScreen: React.FC = () => {
                     {b.cinemaName}
                   </Text>
                 </View>
+
                 <Text variant="body-small" colorRoleName="on-surface-variant">
                   {b.auditoriumName} • Seats: {b.seats.join(', ')}
                 </Text>
+
+                <View style={styles.timeRow}>
+                  <Ionicons name="time-outline" size={13} color={colors.onSurfaceVariant} style={{ marginRight: 4 }} />
+                  <Text variant="label-small" colorRoleName="on-surface-variant">
+                    {new Date(b.startTime).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                </View>
 
                 <View style={[styles.divider, { backgroundColor: colors.outlineVariant }]} />
 
@@ -187,12 +257,12 @@ export const BookingsScreen: React.FC = () => {
                     </Text>
                   </View>
 
-                  {b.status === 'CONFIRMED' && (
+                  {(isActive || isPending) && (
                     <Button
-                      label="View QR Pass"
+                      label={isActive ? 'View QR Pass' : 'View Order'}
                       variant="primary"
                       size="sm"
-                      onPress={() => navigation.navigate('Ticket', { ticketToken: b.id })}
+                      onPress={() => navigation.navigate('Ticket', { ticketToken: b.ticketToken || b.id })}
                     />
                   )}
                 </View>
@@ -236,6 +306,11 @@ const styles = StyleSheet.create({
     padding: spacingVal('md', 16),
     paddingBottom: 80,
   },
+  loadingContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   ticketCard: {
     borderWidth: 1,
     borderRadius: radiusVal('lg', 16),
@@ -250,12 +325,17 @@ const styles = StyleSheet.create({
   },
   movieTitle: {
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: spacingVal('xxs', 4),
   },
   cinemaLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: spacingVal('xxs', 4),
+  },
+  timeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacingVal('xxs', 4),
   },
   divider: {
     height: 1,
@@ -267,4 +347,3 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
-

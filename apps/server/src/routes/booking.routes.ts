@@ -213,6 +213,105 @@ router.post(
 );
 
 /**
+ * GET /v1/bookings
+ * Returns a list of bookings, optionally filtered by ids, email, or userId.
+ */
+router.get(
+  '/',
+  rateLimiter({ windowMs: 60000, max: 60, keyPrefix: 'rl:list-bookings' }),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const idsParam = req.query.ids as string | undefined;
+      const emailParam = req.query.email as string | undefined;
+      const userIdParam = req.query.userId as string | undefined;
+
+      const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const whereClause: any = {};
+
+      if (idsParam) {
+        const idList = idsParam
+          .split(',')
+          .map((id) => id.trim())
+          .filter((id) => UUID_REGEX.test(id));
+
+        if (idList.length > 0) {
+          whereClause.id = { in: idList };
+        } else {
+          return res.status(200).json({
+            success: true,
+            data: [],
+            meta: {
+              requestId: req.id,
+              timestamp: new Date().toISOString(),
+            },
+          });
+        }
+      } else if (emailParam) {
+        whereClause.user = { email: emailParam.toLowerCase() };
+      } else if (userIdParam && UUID_REGEX.test(userIdParam)) {
+        whereClause.userId = userIdParam;
+      }
+
+      const bookings = await readClient.booking.findMany({
+        where: whereClause,
+        include: {
+          showtime: {
+            include: {
+              movie: true,
+              auditorium: { include: { cinema: true } },
+            },
+          },
+          bookingSeats: { include: { seat: true } },
+          ticket: true,
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      });
+
+      const formatted = bookings.map((b) => {
+        const isPast = new Date(b.showtime.startTime) < new Date();
+        let status: 'CONFIRMED' | 'PENDING' | 'USED' | 'CANCELLED' = 'PENDING';
+
+        if (b.status === 'CONFIRMED') {
+          status = isPast ? 'USED' : 'CONFIRMED';
+        } else if (b.status === 'PENDING_PAYMENT') {
+          status = 'PENDING';
+        } else {
+          status = 'CANCELLED';
+        }
+
+        return {
+          id: b.id,
+          movieTitle: b.showtime.movie.title,
+          posterUrl: b.showtime.movie.posterPath
+            ? `https://image.tmdb.org/t/p/w500${b.showtime.movie.posterPath}`
+            : null,
+          cinemaName: b.showtime.auditorium.cinema.name,
+          auditoriumName: b.showtime.auditorium.name,
+          seats: b.bookingSeats.map((bs) => `${bs.seat.rowLabel}${bs.seat.seatNumber}`),
+          startTime: b.showtime.startTime.toISOString(),
+          totalAmountKobo: b.totalAmountKobo,
+          status,
+          ticketToken: b.ticket?.publicToken || b.id,
+          createdAt: b.createdAt.toISOString(),
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: formatted,
+        meta: {
+          requestId: req.id,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
+);
+
+/**
  * GET /v1/bookings/:id
  * Fetches order and ticket details.
  */

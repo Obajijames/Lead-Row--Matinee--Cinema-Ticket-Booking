@@ -119,5 +119,12 @@ describe('Booking & Checkout API (/v1/bookings)', () => {
     expect(res.status).toBe(500); // Handled domain error
     expect(res.body.success).toBe(false);
   });
+
+  it('should list bookings via GET /v1/bookings', async () => {
+    const res = await request(app).get('/v1/bookings');
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+  });
 });
 
