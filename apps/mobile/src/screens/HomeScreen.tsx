@@ -291,33 +291,21 @@ export const HomeScreen: React.FC = () => {
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* 1. Location Bar & Header */}
+        {/* Header with Search Bar & Profile/Notification Actions */}
         <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.locationContainer}
-            onPress={() => setShowLocationModal(true)}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={`Current location: ${selectedCinema.name}, ${selectedCinema.city}. Tap to select cinema location.`}
-          >
-            <Ionicons name="location" size={20} color={colors.primary} style={styles.locationPin} />
-            <View style={{ flex: 1 }}>
-              <Text variant="label-small" colorRoleName="outline">
-                LOCATION / CINEMA
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text
-                  variant="body-medium"
-                  colorRoleName="on-surface"
-                  numberOfLines={1}
-                  style={styles.cinemaName}
-                >
-                  {selectedCinema.name}
-                </Text>
-                <Ionicons name="chevron-down" size={14} color={colors.outline} style={styles.chevronIcon} />
-              </View>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.searchWrapper}>
+            <Input
+              placeholder="Find your next movie..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
+              leadingIcon="search"
+              trailingIcon={searchQuery.length > 0 ? 'close-circle' : undefined}
+              onTrailingPress={() => setSearchQuery('')}
+              containerStyle={styles.searchContainer}
+            />
+          </View>
 
           <View style={styles.headerIcons}>
             <TouchableOpacity
@@ -339,21 +327,6 @@ export const HomeScreen: React.FC = () => {
               <Ionicons name="person" size={20} color={colors.onSurface} />
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* 2. Prominent Search Bar (Token-bound Design System Input) */}
-        <View style={styles.searchSection}>
-          <Input
-            placeholder="Find your next movie..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearchSubmit}
-            returnKeyType="search"
-            leadingIcon="search"
-            trailingIcon={searchQuery.length > 0 ? 'close-circle' : undefined}
-            onTrailingPress={() => setSearchQuery('')}
-            containerStyle={styles.searchContainer}
-          />
         </View>
 
         {/* Region Filter Chips: Global Releases vs Nollywood / Nigeria */}
@@ -964,21 +937,9 @@ const styles = StyleSheet.create({
     paddingTop: spacingVal('sm', 12),
     paddingBottom: spacingVal('xs', 8),
   },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  searchWrapper: {
     flex: 1,
-    marginRight: 12,
-  },
-  locationPin: {
-    marginRight: 8,
-  },
-  cinemaName: {
-    fontWeight: '700',
-    maxWidth: 200,
-  },
-  chevronIcon: {
-    marginLeft: 4,
+    marginRight: spacingVal('sm', 12),
   },
   headerIcons: {
     flexDirection: 'row',
