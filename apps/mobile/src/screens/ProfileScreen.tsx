@@ -266,17 +266,17 @@ export const ProfileScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={18} color={colors.outline} style={styles.chevron} />
           </TouchableOpacity>
 
-          {/* In-App Browser Checkout */}
-          <View style={styles.menuItem}>
+          {/* In-App Browser */}
+          <View style={[styles.menuItem, styles.menuItemBorder, { borderBottomColor: colors.outlineVariant }]}>
             <View style={[styles.iconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
               <Ionicons name="browsers-outline" size={20} color={colors.primary} />
             </View>
             <View style={{ flex: 1, paddingRight: 8 }}>
               <Text variant="body-medium" colorRoleName="on-surface" style={styles.itemTitle}>
-                In-App Checkout
+                In-App Browser
               </Text>
               <Text variant="body-small" colorRoleName="on-surface-variant">
-                Use built-in browser for Flutterwave payment
+                Open payment checkout inside the app
               </Text>
             </View>
             <Switch
@@ -289,6 +289,31 @@ export const ProfileScreen: React.FC = () => {
               accessibilityState={{ checked: isInAppBrowser }}
             />
           </View>
+
+          {/* Design System Gallery */}
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate('DevComponentGallery')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Design System Gallery"
+          >
+            <View style={[styles.iconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
+              <Ionicons name="color-palette-outline" size={20} color={colors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text variant="body-medium" colorRoleName="on-surface" style={styles.itemTitle}>
+                  Design System Gallery
+                </Text>
+                <Badge label="DEV" variant="warning" />
+              </View>
+              <Text variant="body-small" colorRoleName="on-surface-variant">
+                Inspect UI tokens, states & components
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.outline} style={styles.chevron} />
+          </TouchableOpacity>
         </Card>
 
         {/* Section: Support */}
