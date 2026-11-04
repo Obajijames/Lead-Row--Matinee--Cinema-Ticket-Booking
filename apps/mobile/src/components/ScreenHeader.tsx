@@ -4,6 +4,7 @@ import { View, Pressable, StyleSheet, ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { colorRole, spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import { Text } from './Text';
 
 export interface ScreenHeaderProps {
@@ -19,6 +20,8 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
   rightSlot,
   style,
 }) => {
+  const { colors } = useTheme();
+
   const handleBack = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -39,12 +42,14 @@ export const ScreenHeader: React.FC<ScreenHeaderProps> = ({
             style={({ pressed }) => [
               styles.backButton,
               {
-                backgroundColor: colorRole('surface-container-high', '#1E1E2C'),
+                backgroundColor: colors.surfaceContainerHigh,
+                borderColor: colors.outlineVariant,
+                borderWidth: 1,
                 opacity: pressed ? 0.75 : 1,
               },
             ]}
           >
-            <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={22} color={colors.onSurface} />
           </Pressable>
         ) : (
           <View style={styles.spacer} />

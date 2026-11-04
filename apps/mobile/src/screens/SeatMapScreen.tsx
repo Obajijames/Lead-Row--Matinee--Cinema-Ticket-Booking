@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import {
   Text,
   ScreenHeader,
@@ -33,6 +34,7 @@ interface SeatMapData {
 }
 
 export const SeatMapScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { showtimeId } = route.params;
   const [data, setData] = useState<SeatMapData | null>(null);
   const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
@@ -123,17 +125,17 @@ export const SeatMapScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (isLoading || !data) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <ScreenHeader title="Select Seats" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colorRole('primary', '#d7960a')} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title={data.auditoriumName}
         onBack={() => navigation.goBack()}
@@ -165,8 +167,8 @@ export const SeatMapScreen: React.FC<Props> = ({ route, navigation }) => {
         style={[
           styles.bottomBar,
           {
-            backgroundColor: colorRole('surface-container', '#1D1B20'),
-            borderColor: colorRole('outline-variant', '#49454F'),
+            backgroundColor: colors.surfaceContainer,
+            borderColor: colors.outlineVariant,
           },
         ]}
       >

@@ -10,6 +10,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal, radiusVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import {
   Text,
   ScreenHeader,
@@ -29,6 +30,7 @@ interface QueueStatusResponse {
 }
 
 export const WaitingRoomScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { showtimeId } = route.params;
   const [position, setPosition] = useState<number>(1);
   const [estimatedWait, setEstimatedWait] = useState<number>(30);
@@ -70,7 +72,7 @@ export const WaitingRoomScreen: React.FC<Props> = ({ route, navigation }) => {
   }, [showtimeId]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title="Virtual Waiting Room"
         onBack={() => navigation.navigate('Home')}
@@ -82,7 +84,7 @@ export const WaitingRoomScreen: React.FC<Props> = ({ route, navigation }) => {
             {isAdmitted ? (
               <Ionicons name="checkmark-circle" size={56} color="#00E676" />
             ) : (
-              <Ionicons name="time" size={52} color={colorRole('primary', '#d7960a')} />
+              <Ionicons name="time" size={52} color={colors.primary} />
             )}
           </View>
 
@@ -97,7 +99,7 @@ export const WaitingRoomScreen: React.FC<Props> = ({ route, navigation }) => {
           </Text>
 
           {!isAdmitted && (
-            <View style={styles.statsContainer}>
+            <View style={[styles.statsContainer, { backgroundColor: colors.surfaceContainerHigh }]}>
               <View style={styles.statBox}>
                 <Text variant="headline-medium" colorRoleName="primary" style={styles.statValue}>
                   #{position}
@@ -107,7 +109,7 @@ export const WaitingRoomScreen: React.FC<Props> = ({ route, navigation }) => {
                 </Text>
               </View>
 
-              <View style={styles.statDivider} />
+              <View style={[styles.statDivider, { backgroundColor: colors.outlineVariant }]} />
 
               <View style={styles.statBox}>
                 <Text variant="headline-medium" colorRoleName="on-surface" style={styles.statValue}>

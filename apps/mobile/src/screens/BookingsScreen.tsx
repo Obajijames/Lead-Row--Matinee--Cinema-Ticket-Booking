@@ -12,6 +12,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal, radiusVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import {
   Text,
   Card,
@@ -56,6 +57,7 @@ const SAMPLE_BOOKINGS: BookingRecord[] = [
 
 export const BookingsScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors, isDark } = useTheme();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const [bookings] = useState<BookingRecord[]>(SAMPLE_BOOKINGS);
 
@@ -64,7 +66,7 @@ export const BookingsScreen: React.FC = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text variant="headline-medium" colorRoleName="on-surface" style={styles.title}>
@@ -75,9 +77,15 @@ export const BookingsScreen: React.FC = () => {
         </Text>
 
         {/* Tab Selector */}
-        <View style={styles.tabContainer}>
+        <View style={[styles.tabContainer, { backgroundColor: colors.surfaceContainerHigh }]}>
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'upcoming' && styles.tabButtonActive]}
+            style={[
+              styles.tabButton,
+              activeTab === 'upcoming' && [
+                styles.tabButtonActive,
+                { borderColor: colors.primary, backgroundColor: 'rgba(215, 150, 10, 0.16)' },
+              ],
+            ]}
             onPress={() => setActiveTab('upcoming')}
           >
             <Text
@@ -90,7 +98,13 @@ export const BookingsScreen: React.FC = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'past' && styles.tabButtonActive]}
+            style={[
+              styles.tabButton,
+              activeTab === 'past' && [
+                styles.tabButtonActive,
+                { borderColor: colors.primary, backgroundColor: 'rgba(215, 150, 10, 0.16)' },
+              ],
+            ]}
             onPress={() => setActiveTab('past')}
           >
             <Text
@@ -119,7 +133,13 @@ export const BookingsScreen: React.FC = () => {
           />
         ) : (
           filteredBookings.map((b) => (
-            <Card key={b.id} style={styles.ticketCard}>
+            <Card
+              key={b.id}
+              style={[
+                styles.ticketCard,
+                { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+              ]}
+            >
               <View style={styles.cardHeader}>
                 <Badge
                   label={b.status === 'CONFIRMED' ? 'ACTIVE TICKET' : 'COMPLETED'}
@@ -135,7 +155,7 @@ export const BookingsScreen: React.FC = () => {
               </Text>
 
               <View style={styles.cinemaLocationRow}>
-                <Ionicons name="location" size={14} color={colorRole('primary', '#d7960a')} style={{ marginRight: 4 }} />
+                <Ionicons name="location" size={14} color={colors.primary} style={{ marginRight: 4 }} />
                 <Text variant="body-small" colorRoleName="primary" style={{ fontWeight: '600' }}>
                   {b.cinemaName}
                 </Text>
@@ -144,7 +164,7 @@ export const BookingsScreen: React.FC = () => {
                 {b.auditoriumName} • Seats: {b.seats.join(', ')}
               </Text>
 
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: colors.outlineVariant }]} />
 
               <View style={styles.footerRow}>
                 <View>
@@ -187,7 +207,6 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: '#1E1E2C',
     borderRadius: radiusVal('md', 12),
     padding: 4,
     marginTop: spacingVal('md', 16),
@@ -199,8 +218,6 @@ const styles = StyleSheet.create({
     borderRadius: radiusVal('sm', 8),
   },
   tabButtonActive: {
-    backgroundColor: 'rgba(215, 150, 10, 0.16)',
-    borderColor: '#d7960a',
     borderWidth: 1,
   },
   scrollContent: {
@@ -208,8 +225,6 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   ticketCard: {
-    backgroundColor: '#161622',
-    borderColor: '#2D2D3D',
     borderWidth: 1,
     borderRadius: radiusVal('lg', 16),
     padding: spacingVal('md', 16),
@@ -232,7 +247,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#2D2D3D',
     marginVertical: spacingVal('sm', 12),
   },
   footerRow: {

@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import * as WebBrowser from 'expo-web-browser';
 import { getInAppBrowserPreference } from '../utils/browserPreference';
 import {
@@ -42,6 +43,7 @@ interface CheckoutResult {
 }
 
 export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { holdToken, showtimeId } = route.params;
   const [isProcessing, setIsProcessing] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -192,7 +194,7 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScreenHeader title="Order Review" onBack={() => navigation.goBack()} />
 
       <KeyboardAvoidingView
@@ -201,9 +203,9 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Hold Expiry Notice */}
-          <Card style={styles.noticeCard}>
+          <Card style={[styles.noticeCard, { borderColor: colors.primary }]}>
             <View style={styles.noticeTitleRow}>
-              <Ionicons name="time" size={18} color={colorRole('primary', '#d7960a')} style={{ marginRight: 6 }} />
+              <Ionicons name="time" size={18} color={colors.primary} style={{ marginRight: 6 }} />
               <Text variant="title-small" colorRoleName="primary" style={styles.noticeTitle}>
                 10-Minute Hold Active
               </Text>
@@ -216,7 +218,7 @@ export const OrderReviewScreen: React.FC<Props> = ({ route, navigation }) => {
           {/* Customer Contact Details */}
           <Card style={styles.contactCard}>
             <View style={styles.contactHeaderRow}>
-              <Ionicons name="person-circle-outline" size={20} color={colorRole('primary', '#d7960a')} style={{ marginRight: 8 }} />
+              <Ionicons name="person-circle-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
               <Text variant="title-small" colorRoleName="on-surface" style={styles.contactTitle}>
                 Ticket Recipient Details
               </Text>

@@ -14,6 +14,7 @@ import Animated, { FadeInDown, ZoomInEasyDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal, radiusVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import {
   Text,
   ScreenHeader,
@@ -46,6 +47,7 @@ interface TicketDetails {
 }
 
 export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors, isDark } = useTheme();
   const params = (route.params as any) || {};
   const ticketToken = params.ticketToken || params.bookingId || '';
   const [booking, setBooking] = useState<TicketDetails | null>(null);
@@ -115,9 +117,9 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color={colorRole('primary', '#d7960a')} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text variant="body-medium" colorRoleName="on-surface-variant" style={{ marginTop: 12 }}>
             Loading your cinema ticket...
           </Text>
@@ -142,7 +144,7 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
     : '';
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title="Your Ticket"
         onBack={handleReturnHome}
@@ -151,7 +153,12 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Ticket Card Container with Reanimated Spring Entrance */}
         <Animated.View entering={ZoomInEasyDown.duration(650).springify().damping(12)}>
-          <Card style={styles.ticketCard}>
+          <Card
+            style={[
+              styles.ticketCard,
+              { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
+            ]}
+          >
             {/* Header */}
             <View style={styles.ticketHeader}>
               <Badge
@@ -169,7 +176,7 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
             </Text>
 
             <View style={styles.cinemaLocationRow}>
-              <Ionicons name="location" size={15} color={colorRole('primary', '#d7960a')} style={{ marginRight: 4 }} />
+              <Ionicons name="location" size={15} color={colors.primary} style={{ marginRight: 4 }} />
               <Text variant="body-medium" colorRoleName="primary" style={styles.cinemaName}>
                 {booking?.showtime.auditorium.cinema.name}
               </Text>
@@ -179,7 +186,7 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
             </Text>
 
             {/* Date & Time Grid */}
-            <View style={styles.infoRow}>
+            <View style={[styles.infoRow, { backgroundColor: colors.surfaceContainerHigh }]}>
               <View style={styles.infoCol}>
                 <Text variant="label-small" colorRoleName="outline">
                   DATE
@@ -208,9 +215,9 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
 
             {/* Perforated Divider Line */}
             <View style={styles.perforationContainer}>
-              <View style={styles.punchHoleLeft} />
-              <View style={styles.dashedLine} />
-              <View style={styles.punchHoleRight} />
+              <View style={[styles.punchHoleLeft, { backgroundColor: colors.background }]} />
+              <View style={[styles.dashedLine, { borderColor: colors.outlineVariant }]} />
+              <View style={[styles.punchHoleRight, { backgroundColor: colors.background }]} />
             </View>
 
             {/* High-Resolution Scannable QR Code */}

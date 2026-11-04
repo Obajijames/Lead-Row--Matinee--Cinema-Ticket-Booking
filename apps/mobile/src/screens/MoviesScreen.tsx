@@ -14,6 +14,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList, MainTabParamList } from '../navigation/types';
 import { colorRole, spacingVal, radiusVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import {
   Text,
   MovieCard,
@@ -37,6 +38,7 @@ interface MovieItem {
 export const MoviesScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<RouteProp<MainTabParamList, 'MoviesTab'>>();
+  const { colors } = useTheme();
   const [searchQuery, setSearchQuery] = useState(route.params?.initialSearch || '');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'now-playing' | 'upcoming' | 'active-showtimes'>(
     route.params?.filter || 'all'
@@ -105,7 +107,7 @@ export const MoviesScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text variant="headline-medium" colorRoleName="on-surface" style={styles.title}>

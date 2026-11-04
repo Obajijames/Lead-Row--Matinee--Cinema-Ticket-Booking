@@ -13,6 +13,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../navigation/types';
 import { colorRole, spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import {
   Text,
   ScreenHeader,
@@ -56,6 +57,7 @@ interface MovieDetails {
 }
 
 export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
+  const { colors } = useTheme();
   const { movieId } = route.params;
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,10 +86,10 @@ export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <ScreenHeader title="Movie Details" onBack={() => navigation.goBack()} />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color={colorRole('primary', '#d7960a')} />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       </SafeAreaView>
     );
@@ -95,7 +97,7 @@ export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
 
   if (error || !movie) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <ScreenHeader title="Movie Details" onBack={() => navigation.goBack()} />
         <EmptyState
           iconName="alert-circle"
@@ -109,7 +111,7 @@ export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colorRole('background', '#0B0B10') }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScreenHeader title={movie.title} onBack={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -182,9 +184,9 @@ export const MovieDetailsScreen: React.FC<Props> = ({ route, navigation }) => {
                   </Text>
                 </View>
 
-                <View style={styles.showtimeFooter}>
+                <View style={[styles.showtimeFooter, { borderTopColor: colors.outlineVariant }]}>
                   <View style={styles.timeWrapper}>
-                    <Ionicons name="time" size={15} color={colorRole('primary', '#d7960a')} style={{ marginRight: 6 }} />
+                    <Ionicons name="time" size={15} color={colors.primary} style={{ marginRight: 6 }} />
                     <Text variant="body-medium" colorRoleName="on-surface" style={styles.timeLabel}>
                       {formatShowtime(st.startTime)}
                     </Text>

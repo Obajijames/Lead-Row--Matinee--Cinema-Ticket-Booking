@@ -56,3 +56,4 @@ export function useInAppBrowserPreference() {
 
   return { isInAppBrowser, togglePreference, isLoading };
 }
+

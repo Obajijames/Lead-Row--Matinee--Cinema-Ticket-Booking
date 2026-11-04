@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
 import { colorRole, spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import { Text } from './Text';
 
 export interface PriceSummaryProps {
@@ -28,13 +29,15 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
   ticketCount,
   style,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor: colorRole('surface-container', '#1D1B20'),
-          borderColor: colorRole('outline-variant', '#49454F'),
+          backgroundColor: colors.surfaceContainer,
+          borderColor: colors.outlineVariant,
         },
         style,
       ]}
@@ -65,7 +68,7 @@ export const PriceSummary: React.FC<PriceSummaryProps> = ({
       <View
         style={[
           styles.divider,
-          { backgroundColor: colorRole('outline-variant', '#49454F') },
+          { backgroundColor: colors.outlineVariant },
         ]}
       />
 

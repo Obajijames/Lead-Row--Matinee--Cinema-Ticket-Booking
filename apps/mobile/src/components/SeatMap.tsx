@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { colorRole, spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import { Text } from './Text';
 
 export type SeatState = 'AVAILABLE' | 'SELECTED' | 'HELD' | 'SOLD';
@@ -121,6 +122,8 @@ export const SeatMap: React.FC<SeatMapProps> = ({
   onToggleSeat,
   style,
 }) => {
+  const { colors, isDark } = useTheme();
+
   // Group seats by row
   const rowLabels = Array.from(new Set(seats.map((s) => s.rowLabel))).sort();
 
@@ -138,49 +141,49 @@ export const SeatMap: React.FC<SeatMapProps> = ({
   const getSeatVisuals = (seat: SeatItem, isSelected: boolean) => {
     if (isSelected) {
       return {
-        bg: colorRole('primary', '#d7960a'),
-        border: colorRole('primary', '#d7960a'),
-        textColor: '#FFFFFF',
+        bg: colors.primary,
+        border: colors.primary,
+        textColor: '#000000',
       };
     }
 
     if (seat.status === 'SOLD') {
       return {
-        bg: colorRole('surface-container-highest', '#36343B'),
-        border: colorRole('outline-variant', '#49454F'),
-        textColor: '#666666',
+        bg: isDark ? '#2D2D3D' : '#E5E7EB',
+        border: isDark ? '#3D3D4D' : '#D1D5DB',
+        textColor: isDark ? '#666677' : '#9CA3AF',
       };
     }
 
     if (seat.status === 'HELD') {
       return {
-        bg: colorRole('tertiary-container', '#4E2600'),
-        border: colorRole('tertiary', '#FFB77C'),
-        textColor: '#FFAA66',
+        bg: isDark ? '#4E2600' : '#FEF3C7',
+        border: '#D97706',
+        textColor: isDark ? '#FFAA66' : '#B45309',
       };
     }
 
     if (seat.seatType === 'VIP') {
       return {
         bg: 'transparent',
-        border: colorRole('primary', '#d7960a'),
-        textColor: colorRole('primary', '#d7960a'),
+        border: colors.primary,
+        textColor: colors.primary,
       };
     }
 
     if (seat.seatType === 'WHEELCHAIR_ACCESSIBLE') {
       return {
         bg: 'transparent',
-        border: colorRole('secondary', '#CCC2DC'),
-        textColor: colorRole('secondary', '#CCC2DC'),
+        border: colors.outline,
+        textColor: colors.outline,
       };
     }
 
     // Standard available
     return {
-      bg: colorRole('surface-container-high', '#322F37'),
-      border: colorRole('outline-variant', '#49454F'),
-      textColor: colorRole('on-surface-variant', '#CAC4D0'),
+      bg: colors.surfaceContainerHigh,
+      border: colors.outlineVariant,
+      textColor: colors.onSurfaceVariant,
     };
   };
 
@@ -191,7 +194,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
         <View
           style={[
             styles.screenCurve,
-            { borderColor: colorRole('primary', '#d7960a') },
+            { borderColor: colors.primary },
           ]}
         />
         <Text variant="label-small" colorRoleName="on-surface-variant" style={styles.screenText}>
@@ -259,7 +262,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           <View
             style={[
               styles.legendDot,
-              { backgroundColor: colorRole('surface-container-high', '#322F37') },
+              { backgroundColor: colors.surfaceContainerHigh },
             ]}
           />
           <Text variant="label-small" colorRoleName="on-surface-variant">
@@ -271,7 +274,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           <View
             style={[
               styles.legendDot,
-              { backgroundColor: colorRole('primary', '#d7960a') },
+              { backgroundColor: colors.primary },
             ]}
           />
           <Text variant="label-small" colorRoleName="on-surface-variant">
@@ -283,7 +286,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           <View
             style={[
               styles.legendDot,
-              { backgroundColor: colorRole('tertiary-container', '#4E2600') },
+              { backgroundColor: isDark ? '#4E2600' : '#FEF3C7' },
             ]}
           />
           <Text variant="label-small" colorRoleName="on-surface-variant">
@@ -295,7 +298,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           <View
             style={[
               styles.legendDot,
-              { backgroundColor: colorRole('surface-container-highest', '#36343B') },
+              { backgroundColor: isDark ? '#2D2D3D' : '#E5E7EB' },
             ]}
           />
           <Text variant="label-small" colorRoleName="on-surface-variant">
@@ -308,7 +311,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
             style={[
               styles.legendDot,
               {
-                borderColor: colorRole('primary', '#d7960a'),
+                borderColor: colors.primary,
                 borderWidth: 1.5,
                 backgroundColor: 'transparent',
               },

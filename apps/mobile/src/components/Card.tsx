@@ -1,14 +1,15 @@
 // apps/mobile/src/components/Card.tsx
 import React from 'react';
-import { View, ViewProps, StyleSheet, ViewStyle } from 'react-native';
+import { View, ViewProps, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { colorRole, spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 
 export type CardElevation = 'low' | 'medium' | 'high';
 
 export interface CardProps extends ViewProps {
   elevation?: CardElevation;
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -17,14 +18,16 @@ export const Card: React.FC<CardProps> = ({
   style,
   ...rest
 }) => {
-  const getBackgroundColorRole = (): string => {
+  const { colors } = useTheme();
+
+  const getBackgroundColor = (): string => {
     switch (elevation) {
       case 'low':
-        return 'surface-container-low';
+        return colors.surfaceContainerLow;
       case 'high':
-        return 'surface-container-high';
+        return colors.surfaceContainerHigh;
       default:
-        return 'surface-container';
+        return colors.surfaceContainer;
     }
   };
 
@@ -33,8 +36,8 @@ export const Card: React.FC<CardProps> = ({
       style={[
         styles.base,
         {
-          backgroundColor: colorRole(getBackgroundColorRole(), '#1D1B20'),
-          borderColor: colorRole('outline-variant', '#49454F'),
+          backgroundColor: getBackgroundColor(),
+          borderColor: colors.outlineVariant,
         },
         style,
       ]}
