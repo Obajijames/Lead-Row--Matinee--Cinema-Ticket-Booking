@@ -132,61 +132,73 @@ export const BookingsScreen: React.FC = () => {
             onAction={activeTab === 'upcoming' ? () => navigation.navigate('Home') : undefined}
           />
         ) : (
-          filteredBookings.map((b) => (
-            <Card
-              key={b.id}
-              style={[
-                styles.ticketCard,
-                { backgroundColor: colors.cardBg, borderColor: colors.cardBorder },
-              ]}
-            >
-              <View style={styles.cardHeader}>
-                <Badge
-                  label={b.status === 'CONFIRMED' ? 'ACTIVE TICKET' : 'COMPLETED'}
-                  variant={b.status === 'CONFIRMED' ? 'success' : 'neutral'}
-                />
-                <Text variant="label-small" colorRoleName="outline">
-                  #{b.id.slice(0, 10).toUpperCase()}
-                </Text>
-              </View>
-
-              <Text variant="title-medium" colorRoleName="on-surface" style={styles.movieTitle}>
-                {b.movieTitle}
-              </Text>
-
-              <View style={styles.cinemaLocationRow}>
-                <Ionicons name="location" size={14} color={colors.primary} style={{ marginRight: 4 }} />
-                <Text variant="body-small" colorRoleName="primary" style={{ fontWeight: '600' }}>
-                  {b.cinemaName}
-                </Text>
-              </View>
-              <Text variant="body-small" colorRoleName="on-surface-variant">
-                {b.auditoriumName} • Seats: {b.seats.join(', ')}
-              </Text>
-
-              <View style={[styles.divider, { backgroundColor: colors.outlineVariant }]} />
-
-              <View style={styles.footerRow}>
-                <View>
+          filteredBookings.map((b) => {
+            const isActive = b.status === 'CONFIRMED';
+            return (
+              <Card
+                key={b.id}
+                style={[
+                  styles.ticketCard,
+                  {
+                    backgroundColor: colors.cardBg,
+                    borderColor: isActive
+                      ? isDark
+                        ? 'rgba(215, 150, 10, 0.45)'
+                        : 'rgba(215, 150, 10, 0.7)'
+                      : colors.cardBorder,
+                    borderLeftWidth: isActive ? 4 : 1,
+                    borderLeftColor: isActive ? colors.primary : colors.cardBorder,
+                  },
+                ]}
+              >
+                <View style={styles.cardHeader}>
+                  <Badge
+                    label={isActive ? 'ACTIVE TICKET' : 'COMPLETED'}
+                    variant={isActive ? 'success' : 'neutral'}
+                  />
                   <Text variant="label-small" colorRoleName="outline">
-                    TOTAL PAID
-                  </Text>
-                  <Text variant="title-small" colorRoleName="on-surface" style={{ fontWeight: '700' }}>
-                    ₦{(b.totalAmountKobo / 100).toLocaleString()}
+                    #{b.id.slice(0, 10).toUpperCase()}
                   </Text>
                 </View>
 
-                {b.status === 'CONFIRMED' && (
-                  <Button
-                    label="View QR Pass"
-                    variant="primary"
-                    size="sm"
-                    onPress={() => navigation.navigate('Ticket', { ticketToken: b.id })}
-                  />
-                )}
-              </View>
-            </Card>
-          ))
+                <Text variant="title-medium" colorRoleName="on-surface" style={styles.movieTitle}>
+                  {b.movieTitle}
+                </Text>
+
+                <View style={styles.cinemaLocationRow}>
+                  <Ionicons name="location" size={14} color={colors.primary} style={{ marginRight: 4 }} />
+                  <Text variant="body-small" colorRoleName="primary" style={{ fontWeight: '600' }}>
+                    {b.cinemaName}
+                  </Text>
+                </View>
+                <Text variant="body-small" colorRoleName="on-surface-variant">
+                  {b.auditoriumName} • Seats: {b.seats.join(', ')}
+                </Text>
+
+                <View style={[styles.divider, { backgroundColor: colors.outlineVariant }]} />
+
+                <View style={styles.footerRow}>
+                  <View>
+                    <Text variant="label-small" colorRoleName="outline">
+                      TOTAL PAID
+                    </Text>
+                    <Text variant="title-small" colorRoleName="on-surface" style={{ fontWeight: '700' }}>
+                      ₦{(b.totalAmountKobo / 100).toLocaleString()}
+                    </Text>
+                  </View>
+
+                  {b.status === 'CONFIRMED' && (
+                    <Button
+                      label="View QR Pass"
+                      variant="primary"
+                      size="sm"
+                      onPress={() => navigation.navigate('Ticket', { ticketToken: b.id })}
+                    />
+                  )}
+                </View>
+              </Card>
+            );
+          })
         )}
       </ScrollView>
     </SafeAreaView>
