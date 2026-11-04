@@ -87,7 +87,7 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
         setIsLoading(false);
         try {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        } catch {}
+        } catch { }
       }
     }
     fetchTicket();
@@ -107,7 +107,7 @@ export const TicketScreen: React.FC<Props> = ({ route, navigation }) => {
   const handleReturnHome = () => {
     try {
       Haptics.selectionAsync();
-    } catch {}
+    } catch { }
     // Reset navigation stack cleanly to Home tab
     navigation.reset({
       index: 0,

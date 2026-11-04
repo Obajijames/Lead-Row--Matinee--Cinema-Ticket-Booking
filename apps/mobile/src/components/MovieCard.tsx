@@ -4,12 +4,14 @@ import {
   Pressable,
   View,
   StyleSheet,
+  StyleProp,
   ViewStyle,
 } from 'react-native';
 import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { colorRole, spacingVal } from '../tokens';
+import { spacingVal } from '../tokens';
+import { useTheme } from '../theme/ThemeContext';
 import { Text } from './Text';
 
 export interface MovieCardProps {
@@ -18,7 +20,7 @@ export interface MovieCardProps {
   rating?: number;
   releaseYear?: string;
   onPress: () => void;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export const MovieCard: React.FC<MovieCardProps> = ({
@@ -29,6 +31,8 @@ export const MovieCard: React.FC<MovieCardProps> = ({
   onPress,
   style,
 }) => {
+  const { colors } = useTheme();
+
   const handlePress = () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -46,8 +50,8 @@ export const MovieCard: React.FC<MovieCardProps> = ({
       style={({ pressed }) => [
         styles.card,
         {
-          backgroundColor: colorRole('surface-container-low', '#161622'),
-          borderColor: colorRole('outline-variant', '#2D2D3D'),
+          backgroundColor: colors.cardBg,
+          borderColor: colors.cardBorder,
           opacity: pressed ? 0.88 : 1,
         },
         style,
@@ -68,7 +72,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({
           <View
             style={[
               styles.imageFallback,
-              { backgroundColor: colorRole('surface-container-high', '#1E1E2C') },
+              { backgroundColor: colors.surfaceContainerHigh },
             ]}
           >
             <Ionicons name="film" size={36} color="#8A8A9E" />
@@ -99,11 +103,14 @@ export const MovieCard: React.FC<MovieCardProps> = ({
         >
           {title}
         </Text>
-        {releaseYear ? (
-          <Text variant="body-small" colorRoleName="on-surface-variant">
-            {releaseYear}
-          </Text>
-        ) : null}
+        <Text
+          variant="body-small"
+          colorRoleName="on-surface-variant"
+          numberOfLines={1}
+          style={styles.releaseYear}
+        >
+          {releaseYear || ' '}
+        </Text>
       </View>
     </Pressable>
   );
@@ -112,6 +119,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({
 const styles = StyleSheet.create({
   card: {
     width: 156,
+    height: 308,
     borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
@@ -150,9 +158,18 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacingVal('sm', 12),
+    height: 86,
+    justifyContent: 'space-between',
   },
   title: {
     fontWeight: '600',
+    lineHeight: 18,
+    minHeight: 36,
+    maxHeight: 36,
     marginBottom: spacingVal('xxs', 4),
+  },
+  releaseYear: {
+    lineHeight: 16,
+    minHeight: 16,
   },
 });
