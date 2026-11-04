@@ -147,7 +147,7 @@ export const ProfileScreen: React.FC = () => {
               Guest User
             </Text>
             <Text variant="body-medium" colorRoleName="on-surface-variant">
-              Welcome to Matinee
+              Welcome to Lead Row
             </Text>
           </View>
         </View>
@@ -394,13 +394,13 @@ export const ProfileScreen: React.FC = () => {
             <Ionicons name="chevron-forward" size={18} color={colors.outline} style={styles.chevron} />
           </TouchableOpacity>
 
-          {/* About Matinee */}
+          {/* About Lead Row */}
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => openModal('about')}
             activeOpacity={0.7}
             accessibilityRole="button"
-            accessibilityLabel="About Matinee"
+            accessibilityLabel="About Lead Row"
           >
             <View style={[styles.iconCircle, { backgroundColor: colors.surfaceContainerHigh }]}>
               <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
@@ -408,7 +408,7 @@ export const ProfileScreen: React.FC = () => {
             <View style={{ flex: 1 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text variant="body-medium" colorRoleName="on-surface" style={styles.itemTitle}>
-                  About Matinee
+                  About Lead Row
                 </Text>
                 <Badge label="v1.0.0" variant="vip" />
               </View>
@@ -423,7 +423,7 @@ export const ProfileScreen: React.FC = () => {
         {/* Footer */}
         <View style={styles.footer}>
           <Text variant="body-small" colorRoleName="outline">
-            Matinee Cinema v1.0.0
+            Lead Row Cinema v1.0.0
           </Text>
           <Text variant="label-small" colorRoleName="outline" style={{ marginTop: 2 }}>
             Powered by Lead Row Ticket Engine
@@ -609,7 +609,7 @@ export const ProfileScreen: React.FC = () => {
                     Email Support
                   </Text>
                   <Text variant="body-small" colorRoleName="primary" style={{ marginTop: 2 }}>
-                    support@matinee.ng
+                    support@leadrow.com
                   </Text>
                   <Text variant="label-small" colorRoleName="outline" style={{ marginTop: 2 }}>
                     Average response time under 15 minutes
@@ -628,7 +628,7 @@ export const ProfileScreen: React.FC = () => {
                     Phone Hotline
                   </Text>
                   <Text variant="body-small" colorRoleName="on-surface" style={{ fontWeight: '600', marginTop: 2 }}>
-                    +234 1 800 MATINEE (6284633)
+                    +234 1 800 LEADROW (5323769)
                   </Text>
                   <Text variant="label-small" colorRoleName="outline" style={{ marginTop: 2 }}>
                     Mon - Sun: 8:00 AM – 11:00 PM Daily
@@ -661,7 +661,6 @@ export const ProfileScreen: React.FC = () => {
             </Card>
           </View>
         </ScrollView>
-        <Button label="Close" variant="primary" size="md" onPress={closeModal} style={{ marginTop: 12 }} />
       </BottomSheet>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -692,7 +691,7 @@ export const ProfileScreen: React.FC = () => {
                 colorRoleName="on-surface-variant"
                 style={{ textAlign: 'center', lineHeight: 18 }}
               >
-                Our engineering and design teams read all user feedback to continuously improve Matinee.
+                Our engineering and design teams read all user feedback to continuously improve Lead Row.
               </Text>
               <Button
                 label="Done"
@@ -793,7 +792,7 @@ export const ProfileScreen: React.FC = () => {
         visible={activeModal === 'privacy'}
         onClose={closeModal}
         title="Privacy Policy"
-        subtitle="How Matinee safeguards your identity & payment"
+        subtitle="How Lead Row safeguards your identity & payment"
         maxHeight="90%"
       >
         <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
@@ -903,19 +902,19 @@ export const ProfileScreen: React.FC = () => {
       </BottomSheet>
 
       {/* ─────────────────────────────────────────────────────────────
-          7. ABOUT MATINEE BOTTOM SHEET MODAL
+          7. ABOUT LEAD ROW BOTTOM SHEET MODAL
       ───────────────────────────────────────────────────────────── */}
       <BottomSheet
         visible={activeModal === 'about'}
         onClose={closeModal}
-        title="About Matinee"
+        title="About Lead Row"
         subtitle="Version 1.0.0 (Release Build)"
       >
         <View style={{ gap: 14, paddingVertical: 8 }}>
           <Card style={styles.infoCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text variant="title-medium" colorRoleName="on-surface" style={{ fontWeight: '800' }}>
-                Matinee Cinema
+                Lead Row Cinema
               </Text>
               <Badge label="v1.0.0" variant="vip" />
             </View>
@@ -953,7 +952,7 @@ export const ProfileScreen: React.FC = () => {
             </View>
           </Card>
 
-          <View style={{ gap: 8, marginTop: 4 }}>
+          <View style={{ marginTop: 4 }}>
             <Button
               label="Explore Design System Gallery"
               variant="outline"
@@ -963,7 +962,6 @@ export const ProfileScreen: React.FC = () => {
                 navigation.navigate('DevComponentGallery');
               }}
             />
-            <Button label="Close" variant="primary" size="md" onPress={closeModal} />
           </View>
         </View>
       </BottomSheet>
