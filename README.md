@@ -27,7 +27,7 @@ Lead Row's mobile client is built on **React Native (Expo SDK 51)** and compiled
 
 > [!TIP]
 > ### 📱 Download Verified Android Test Build
-> * **Direct EAS Build Link**: [**Lead Row Android APK on Expo.dev**](https://expo.dev/accounts/mfemjames/projects/lead-row/builds/be7fb5c1-70c9-44e1-941e-8641e3f560e2)
+> * **Direct EAS Build Link**: [**Lead Row Android APK on Expo.dev**](https://expo.dev/accounts/mfemjames/projects/lead-row/builds/9f2ab83b-36af-4ae1-b1fb-b9f687e1d5fd)
 > * **Build ID**: `e0a5f6e3-7195-47d8-8390-d5dadd7b9fb1`
 > * **Expo Project**: `@mfemjames/lead-row`
 > * **Package Name**: `com.leadrow.app`
