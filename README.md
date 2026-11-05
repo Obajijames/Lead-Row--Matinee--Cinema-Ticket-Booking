@@ -321,7 +321,7 @@ In separate terminals:
 pnpm dev:server
 
 # Terminal 2: Start Expo Mobile App
-pnpm dev:mobile
+pnpm dev:mobile:tunnel
 ```
 
 ---
